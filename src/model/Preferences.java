@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -50,7 +51,8 @@ public class Preferences implements Serializable
     private static final String JIRA_PASSWORD = "jira.password";
     private static final String JIRA_URL = "jira.url";
     private static final String JIRA_PROJECT = "jira.project";
-
+    private static final String JIRA_CURRENT_PROJECT = "jira.current.project";
+    
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
@@ -63,9 +65,7 @@ public class Preferences implements Serializable
     public Preferences()
     {
         // Sort out location and name of preferences file
-        prefsPath = System.getProperty( "user.home" ) + 
-                                          "/" + 
-                                          ".TimeLord.prefs";
+        prefsPath = System.getProperty( "user.home" ) + "/" + ".TimeLord.prefs";
         
         preferences = new HashMap<String, String>();
     }
@@ -216,9 +216,45 @@ public class Preferences implements Serializable
     /**
      * @return The project the user is logging time against.
      */
-    public String getProject()
+    public String[] getProjects()
     {
-        String result = preferences.get( JIRA_PROJECT );
+    	ArrayList<String> tmpNames = new ArrayList<String>();
+    	
+    	for( String key : preferences.keySet() )
+    	{
+    		if( key.contains(JIRA_PROJECT) )
+    		{
+    			tmpNames.add( preferences.get( key ) );
+    		}
+    	}
+    	
+    	String[] projectNames = new String[tmpNames.size()];
+    	tmpNames.toArray( projectNames );
+    	
+        return projectNames;
+    }
+    
+    /**
+     * @param The project the user is logging time against.
+     */
+    public void setProjects( String[] projects )
+    {
+    	if( projects != null )
+    	{
+        	for( int i = 0; i < projects.length; i++ )
+        	{
+        		preferences.put( JIRA_PROJECT + "." + i, projects[i] );
+        	}
+        	saveToDisk();
+    	}
+    }
+    
+    /**
+     * @return The project the user is logging time against.
+     */
+    public String getCurrentProject()
+    {
+        String result = preferences.get( JIRA_CURRENT_PROJECT );
         if ( result == null )
         {
             result = "";
@@ -230,9 +266,9 @@ public class Preferences implements Serializable
     /**
      * @param The project the user is logging time against.
      */
-    public void setProject( String project )
+    public void setCurrentProject( String project )
     {
-        preferences.put( JIRA_PROJECT, project );
+        preferences.put( JIRA_CURRENT_PROJECT, project );
         saveToDisk();
     }
     

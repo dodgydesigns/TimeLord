@@ -80,7 +80,7 @@ public class SqlInterface
         dbConnection = DriverManager.getConnection( "jdbc:sqlite:" + dbPath );
         statementHandler = dbConnection.createStatement();
         
-        // Create an empty database if it doesn't aready exist.
+        // Create an empty database if it doesn't already exist.
         createTimeLordDB();
     }
     

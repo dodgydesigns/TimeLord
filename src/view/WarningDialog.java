@@ -16,8 +16,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 import net.miginfocom.swing.MigLayout;
-import widgets.ComboBoxPopup;
-import control.ControllerOld;
+//import widgets.ComboBoxPopup;
+//import control.ControllerOld;
 
 /**
  * This class provides a generic warning dialog with one or two messages and two
@@ -128,16 +128,16 @@ public class WarningDialog extends JDialog
      */
     protected void negativeButtonActionPerformed()
     {
-        if ( caller.equals( JIRA_URL ) )
-        {
-            ControllerOld.getInstance().usingJIRA = false;
-            MainFrame.getInstance().enableJIRAPanel( false );
-            dispose();
-        }
-        else if ( caller.equals( CLEAR_DB ) )
-        {
-        }
-        dispose();
+//        if ( caller.equals( JIRA_URL ) )
+//        {
+//            ControllerOld.getInstance().usingJIRA = false;
+//            MainFrame.getInstance().enableJIRAPanel( false );
+//            dispose();
+//        }
+//        else if ( caller.equals( CLEAR_DB ) )
+//        {
+//        }
+//        dispose();
     }
 
     /*
@@ -146,58 +146,58 @@ public class WarningDialog extends JDialog
      */
     protected void affirmativeButtonActionPerformed()
     {
-        if ( caller.equals( JIRA_URL ) )
-        {
-            ComboBoxPopup result = ControllerOld.getInstance()
-                    .generateJIRAData();
-            if ( result.getItemCount() > 0 )
-            {
-                ControllerOld.getInstance()
-                        .getJiraItemsCombo()
-                        .setModel( (ComboBoxModel) result );
-            }
-
-            else
-            {
-                String[] messageString = { "Not Available" };
-                String[] toolTipString = { "Could not connect to JIRA server to retrieve tasks." };
-                result = new ComboBoxPopup( messageString, toolTipString );
-            }
-            dispose();
-        }
-        else if ( caller.equals( CLEAR_DB ) )
-        {
-            try
-            {
-                ControllerOld.getInstance().getDB().dropDataBase();
-                ControllerOld.getInstance().getDB().createTimeLordDB();
-            }
-            catch ( SQLException e )
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-            SwingUtilities.invokeLater( new Runnable()
-            {
-
-                @Override
-                public void run()
-                {
-                    ( (DefaultTableModel) MainFrame.getInstance()
-                            .getTaskTable()
-                            .getModel() ).setRowCount( 0 );
-                    MainFrame.getInstance()
-                            .getTaskTable()
-                            .setModel(
-                                    MainFrame.getInstance()
-                                            .setupTaskTableModel() );
-                    MainFrame.getInstance().setupColumns();
-
-                    dispose();
-                }
-            } );
-        }
+//        if ( caller.equals( JIRA_URL ) )
+//        {
+//            ComboBoxPopup result = ControllerOld.getInstance()
+//                    .generateJIRAData();
+//            if ( result.getItemCount() > 0 )
+//            {
+//                ControllerOld.getInstance()
+//                        .getJiraItemsCombo()
+//                        .setModel( (ComboBoxModel) result );
+//            }
+//
+//            else
+//            {
+//                String[] messageString = { "Not Available" };
+//                String[] toolTipString = { "Could not connect to JIRA server to retrieve tasks." };
+//                result = new ComboBoxPopup( messageString, toolTipString );
+//            }
+//            dispose();
+//        }
+//        else if ( caller.equals( CLEAR_DB ) )
+//        {
+//            try
+//            {
+//                ControllerOld.getInstance().getDB().dropDataBase();
+//                ControllerOld.getInstance().getDB().createTimeLordDB();
+//            }
+//            catch ( SQLException e )
+//            {
+//                // TODO Auto-generated catch block
+//                e.printStackTrace();
+//            }
+//
+//            SwingUtilities.invokeLater( new Runnable()
+//            {
+//
+//                @Override
+//                public void run()
+//                {
+//                    ( (DefaultTableModel) MainFrame.getInstance()
+//                            .getTaskTable()
+//                            .getModel() ).setRowCount( 0 );
+//                    MainFrame.getInstance()
+//                            .getTaskTable()
+//                            .setModel(
+//                                    MainFrame.getInstance()
+//                                            .setupTaskTableModel() );
+//                    MainFrame.getInstance().setupColumns();
+//
+//                    dispose();
+//                }
+//            } );
+//        }
     }
 
     // /**

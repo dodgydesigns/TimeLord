@@ -21,6 +21,7 @@ package controller;
 import java.awt.Frame;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import model.Preferences;
 import model.SqlInterface;
 import model.TaskTableModel;
 
+import org.apache.xmlrpc.XmlRpcException;
 import org.joda.time.DateTime;
 
 import view.Configuration;
@@ -59,7 +61,6 @@ public class Controller
     public Controller( View view )
     {
         this.view = view;
-        
         view.addListener( this );
         
         // Create a link to the DB
@@ -74,17 +75,7 @@ public class Controller
         
         // Handle preferences
         preferences = new Preferences();
-        // If a preferences file does not already exist, create the file and display the 
-        // configuration dialog.
-        if( !preferences.readExistingPrefsFromDisk() )
-        {
-            preferences.saveToDisk();
-            JDialog configDialog = new Configuration( this );
-            configDialog.setVisible( true );
-        }
-        
         jiraInterface = new JiraInterface( this );
-
         taskTableModel = new TaskTableModel( database );
 
         startupTimeLord();
@@ -95,11 +86,45 @@ public class Controller
     //----------------------------------------------------------
     private void startupTimeLord()
     {
+    	Semaphore semaphore = new Semaphore( 1 );
+
+        // If a preferences file does not already exist, create the file and display the 
+        // configuration dialog.
+        if( !preferences.readExistingPrefsFromDisk() || !jiraInterface.connectedToJira() )
+        {
+            preferences.saveToDisk();
+            
+        	try
+            {
+	            semaphore.acquire();
+	            JDialog configDialog = new Configuration( this, semaphore );
+	            configDialog.setVisible( true );
+            }
+            catch( InterruptedException e )
+            {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
+        }
+
         // Start drawing the GUI
         view.initComponents();
         
         setDateLabel();
         
+        try
+        {
+        	String project = preferences.getCurrentProject();
+	        for(String[] issue:jiraInterface.getIssues( preferences.getUserName(), project ))
+	        {
+	        	System.out.println(issue[0] + " " + issue[1] + " " + issue[2]);
+	        }
+        }
+        catch( XmlRpcException e )
+        {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+        }
         view.setVisible( true );
     }
     

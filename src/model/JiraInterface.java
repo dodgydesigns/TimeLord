@@ -19,91 +19,35 @@
  */
 package model;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.Semaphore;
+import java.util.logging.Logger;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
+
+import org.apache.xmlrpc.XmlRpcException;
+import org.apache.xmlrpc.client.XmlRpcClient;
+import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+
+import view.Configuration;
+import view.WarningDialog;
 import controller.Controller;
-/**
- * This class provides an interface to a JIRA server and allows the retrieval of
- * project and issue data.
- * 
- * The credentials used to log into the server and the project details are
- * retrieved from the preferences file. Currently only issues with 'open' status
- * will be returned.
- * 
- * @author mullsy
- * 
- */
-//----------------------------------------------------------
-//                    STATIC VARIABLES
-//----------------------------------------------------------
-//----------------------------------------------------------
-//                   INSTANCE VARIABLES
-//----------------------------------------------------------
-//----------------------------------------------------------
-//                      CONSTRUCTORS
-//----------------------------------------------------------
-/**
-     * Constructor that logs in to specified server and retrieves a login token.
-     * This token can then be used for further interrogation of the server for
-     * projects and issues.
-     * 
-     */
-//----------------------------------------------------------
-//                    INSTANCE METHODS
-//----------------------------------------------------------
-/**
-     * Get all the projects on the JIRA server.
-     * 
-     * @throws XmlRpcException
-     */
-/**
-     * Get the issues in a project for a given user from the JIRA server.
-     * 
-     * @param user - the user assigned each issue
-     * @param project - the project the issues belong to
-     * 
-     * @return - an array of strings containing the issue, a description and
-     *         date.
-     * 
-     * @throws XmlRpcException
-     */
-/**
-     * Use the login credentials to try and log into the JIRA server.
-     * 
-     * @return - a token representing the current login
-     * 
-     * @throws XmlRpcException
-     */
-// Login and retrieve login token
-/**
-     * Logout of JIRA server.
-     * 
-     * @throws XmlRpcException
-     */
-/**
-     * This is a helper utility to make sure that a valid URL is used to try and
-     * connect to the JIRA server.
-     * 
-     * @param urlName The URL to test
-     * 
-     * @return Whether the URL is valid or not
-     */
-// note : you may also need
-// HttpURLConnection.setInstanceFollowRedirects(false)
-// return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
-////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////
-//----------------------------------------------------------
-    //                     INNER CLASSES
-    //----------------------------------------------------------
-    
+
 /**
  * This class provides an interface to a JIRA server and allows the retrieval of
  * project and issue data.
@@ -141,9 +85,9 @@ public class JiraInterface
     private String jiraUsername;
     private String jiraPassword;
     private String loginToken;
-    
-    private Controller controller;
-    private String token;
+    private XmlRpcClient rpcClient;
+	private String[] projectNames;
+	private Preferences preferences;
 
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -155,33 +99,154 @@ public class JiraInterface
      * 
      */
     public JiraInterface( Controller controller )
-    {
-        this.controller = controller;
+    {    	    	
+    	this.preferences = controller.getPreferences();
+    	
+        jiraURL = preferences.getJiraUrl();
+        jiraUsername = preferences.getUserName();
+        jiraPassword = preferences.getPassword();
         
-        jiraURL = controller.getPreferences().getJiraUrl();
-        jiraUsername = controller.getPreferences().getUserName();
-        jiraPassword = controller.getPreferences().getPassword();
+        createRpcClient();
     }
 
     //----------------------------------------------------------
     //                    INSTANCE METHODS
     //----------------------------------------------------------
-    public boolean attemptConnection()
+
+	private boolean createRpcClient()
     {
-        boolean connected = false;
-        
-            
-        return connected;
+		boolean success = false;
+		 XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+
+	        try
+	        {
+	            // Create a trust manager that does not validate certificate chains
+	            TrustManager[] trustAllCerts = new TrustManager[] {
+
+	            new X509TrustManager()
+	            {
+	                public X509Certificate[] getAcceptedIssuers()
+	                {
+	                    return null;
+	                }
+
+	                public void checkClientTrusted( X509Certificate[] certs,
+	                        String authType )
+	                {
+	                    // Trust always
+	                }
+
+	                public void checkServerTrusted( X509Certificate[] certs,
+	                        String authType )
+	                {
+	                    // Trust always
+	                }
+	            } };
+
+	            // Install the all-trusting trust manager
+	            SSLContext sc = SSLContext.getInstance( "SSL" );
+	            // Create empty HostnameVerifier
+	            HostnameVerifier hv = new HostnameVerifier()
+	            {
+	                public boolean verify( String arg0, SSLSession arg1 )
+	                {
+	                    return true;
+	                }
+	            };
+
+	            sc.init( null, trustAllCerts, new java.security.SecureRandom() );
+	            HttpsURLConnection.setDefaultSSLSocketFactory( sc.getSocketFactory() );
+	            HttpsURLConnection.setDefaultHostnameVerifier( hv );
+
+	            rpcClient = new XmlRpcClient();
+	            config.setServerURL( new URL( jiraURL + RPC_PATH ) );
+	            rpcClient.setConfig( config );
+	            
+	            success = true;
+	        }
+	        catch ( MalformedURLException e )
+	        {
+	            System.out.println( "Malformed URL Exception" );
+	        }
+	        catch ( NoSuchAlgorithmException e )
+	        {
+	            e.printStackTrace();
+	        }
+	        catch ( KeyManagementException e )
+	        {
+	            e.printStackTrace();
+	        }
+	        
+	        return success;
     }
-    
+
+	/**
+	 * This method attempts to connect to the provided Jira URL using the supplied credentials.
+	 * If the service can be contacted, a list of the Jira projects will be fetched which indicates
+	 * a successful connection.
+	 * 
+	 * @return Whether a successful connection was possible using the supplied connection details.
+	 */
+	public boolean connectedToJira()
+    {		
+        jiraURL = preferences.getJiraUrl();
+        jiraUsername = preferences.getUserName();
+        jiraPassword = preferences.getPassword();
+        
+		if( rpcClient != null &&
+			!jiraUsername.isEmpty() &&
+			!jiraPassword.isEmpty() )
+		{
+    		try
+            {
+    	        login();
+            }
+            catch( XmlRpcException e )
+            {
+            }
+		}
+		
+        return loginToken != null;
+    }
+	
     /**
      * Get all the projects on the JIRA server.
      * 
-     * @throws XmlRpcException
      */
-    public void getProjects()
+    public String[] getProjects()
     {
+        // Retrieve projects
+        Vector<String> loginTokenVector = new Vector<String>( 1 );
+        loginTokenVector.add( loginToken );
 
+        Object[] projects = null;
+        try
+        {
+	        projects = (Object[]) rpcClient.execute( "jira1.getProjectsNoSchemes", 
+	                                                   loginTokenVector );
+        }
+        catch( XmlRpcException e )
+        {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+        }
+
+        projectNames = new String[projects.length];
+        // Print projects
+        for ( int i = 0; i < projects.length; i++ )
+        {
+            Map<?, ?> project = (Map<?, ?>) projects[i];
+            projectNames[i] = project.get( "name" ).toString();
+            
+//            if ( project.get( "name" ).toString().toLowerCase().equals( "cnr" ) )
+//            {
+//                System.out.println( "KEY: " + project.get( "key" ) + "\tNAME: "
+//                        + project.get( "name" ) + "\tLEAD: "
+//                        + project.get( "lead" ) );
+//            }
+        }
+        
+		return projectNames;
     }
 
     /**
@@ -196,10 +261,40 @@ public class JiraInterface
      * @throws XmlRpcException
      */
     public ArrayList<String[]> getIssues( String user, String project )
+            throws XmlRpcException
     {
-        ArrayList<String[]> issues = new ArrayList<>();
-        
-        return issues;
+        ArrayList<String[]> returnArray = new ArrayList<String[]>();
+
+        Vector<String> parameters = new Vector<String>( 2 );
+        parameters.add( loginToken );
+        parameters.add( project );
+
+        if ( loginToken != null )
+        {
+            Object[] issues = (Object[]) rpcClient.execute( "jira1.getIssuesFromTextSearch", parameters );
+
+            // Add matched results to returnArray and print them out.
+            for ( int i = 0; i < issues.length; i++ )
+            {
+                Map<?, ?> issue = (Map<?, ?>) issues[i];
+
+                if ( issue.get( "assignee" ) != null
+                        && issue.get( "assignee" ).equals( user ) )
+                {
+                    if ( !issue.get( "status" ).equals( STATUS_CLOSED )
+                            && !issue.get( "status" ).equals( STATUS_RESOLVED ) )
+                    {
+                        String[] details = new String[3];
+                        details[0] = (String) issue.get( "key" );
+                        details[1] = (String) issue.get( "created" );
+                        details[2] = (String) issue.get( "summary" );
+                        returnArray.add( details );
+                    }
+                }
+            }
+        }
+
+        return returnArray;
     }
 
     /**
@@ -209,16 +304,33 @@ public class JiraInterface
      * 
      * @throws XmlRpcException
      */
-    public String login()
+    public void login() throws XmlRpcException
     {
+    	createRpcClient();
+    	
         // Login and retrieve login token
         Vector<String> loginParams = new Vector<String>( 2 );
         loginParams.add( jiraUsername );
         loginParams.add( jiraPassword );
 
-
-
-        return loginToken;
+        try
+        {
+            loginToken = (String) rpcClient.execute( "jira1.login", loginParams );
+        }
+        catch ( org.apache.xmlrpc.XmlRpcException e )
+        {
+            SwingUtilities.invokeLater( new Runnable()
+            {
+                public void run()
+                {
+                    WarningDialog warning = new WarningDialog(
+                            null, WarningDialog.JIRA_URL,
+                            "Could not connect to server: \n" + jiraURL,
+                            "Try Again?", "No", "Yes" );
+                    warning.setVisible( true );
+                }
+            } );
+        }
     }
 
     /**
@@ -226,9 +338,20 @@ public class JiraInterface
      * 
      * @throws XmlRpcException
      */
-    public void logout()
+    public void logout() throws XmlRpcException
     {
+        Vector<String> loginTokenVector = new Vector<String>( 1 );
+        loginTokenVector.add( loginToken );
 
+        if ( loginToken != null )
+        {
+            if ( (Boolean) rpcClient.execute( "jira1.logout", loginTokenVector ) )
+            {
+                Logger.getLogger( "TimeLord" ).info(
+                        "Could not log out of JIRA" );
+            }
+
+        }
     }
 
     /**
@@ -253,7 +376,6 @@ public class JiraInterface
         }
         catch ( Exception e )
         {
-            e.printStackTrace();
             return false;
         }
     }
@@ -261,10 +383,11 @@ public class JiraInterface
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
-    
+    public String[] getProjectNames()
+    {
+    	return projectNames;
+    }
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------
-
-
 }

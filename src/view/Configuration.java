@@ -3,9 +3,12 @@ package view;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,12 +17,11 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import controller.Controller;
-
 import model.JiraInterface;
 import model.Preferences;
 import model.SqlInterface;
 import net.miginfocom.swing.MigLayout;
+import controller.Controller;
 
 /**
  * Provide configuration control for JIRA clients. This Swing component uses
@@ -50,7 +52,7 @@ public class Configuration extends JDialog
     private JTextField urlTextField;
     private JTextField usernaneTextField;
     private JPasswordField passwordPasswordField;
-    private JTextField projectTextField;
+    private JComboBox<String> projectCombo;
 
     private JButton tryButton;
     private JButton clearDBButton;
@@ -65,13 +67,16 @@ public class Configuration extends JDialog
 
     private JiraInterface jiraInterface;
 
+	private Semaphore semaphore;
+
     // -------------------------------------------------------------------------
     // CONSTRUCTOR
     // -------------------------------------------------------------------------
-    public Configuration( Controller controller )
+    public Configuration( Controller controller, Semaphore semaphore )
     {
         super( controller.getView() );
         
+        this.semaphore = semaphore;
         this.view = (JFrame) controller.getView();
         this.preferences = controller.getPreferences();
         this.database = controller.getDatabase();
@@ -99,11 +104,12 @@ public class Configuration extends JDialog
         urlTextField.setText( preferences.getJiraUrl() );
         passwordPasswordField.setText( preferences.getPassword() );
         usernaneTextField.setText( preferences.getUserName() );
-        projectTextField.setText( preferences.getProject() );
+        projectCombo.setSelectedItem( preferences.getCurrentProject() );
     }
 
     private void initComponents()
     {
+    	setModal( true );
         getContentPane().setBackground( Color.WHITE );
 
         // Panels
@@ -124,7 +130,11 @@ public class Configuration extends JDialog
         urlTextField = new JTextField();
         usernaneTextField = new JTextField();
         passwordPasswordField = new JPasswordField();
-        projectTextField = new JTextField();
+        
+        // Combo for available projects
+		String[] projects = (preferences.getProjects().length > 0) ? preferences.getProjects() 
+		                                                           : new String[1];
+        projectCombo = new JComboBox<String>( projects );
 
         // Buttons
         tryButton = new JButton( "Try..." );
@@ -188,6 +198,7 @@ public class Configuration extends JDialog
             public void actionPerformed( ActionEvent arg0 )
             {
                 // TODO: undo any changes
+            	semaphore.release();
                 dispose();
             }
         } );
@@ -198,12 +209,14 @@ public class Configuration extends JDialog
             @Override
             public void actionPerformed( ActionEvent arg0 )
             {
-                preferences.setProject( projectTextField.getText() );
+                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
+                preferences.setProjects( jiraInterface.getProjectNames() );
                 char[] pw = passwordPasswordField.getPassword();
                 preferences.setPassword( String.valueOf( pw ) );
                 preferences.setUserName( usernaneTextField.getText() );
                 preferences.setJIRAURL( urlTextField.getText() );
 
+                semaphore.release();
                 dispose();
             }
         } );
@@ -222,7 +235,7 @@ public class Configuration extends JDialog
         jiraPanel.add( new JLabel( "Password:" ) );
         jiraPanel.add( passwordPasswordField, "wrap, span, grow" );
         jiraPanel.add( new JLabel( "Project:" ) );
-        jiraPanel.add( projectTextField, "wrap 15, span, grow" );
+        jiraPanel.add( projectCombo, "wrap 15, span, grow" );
 
         jiraPanel.add( tryJIRASettingsLabel, "span 2" );
         jiraPanel.add( tryButton, "right, width 80:80:80" );
@@ -245,22 +258,27 @@ public class Configuration extends JDialog
      */
     private void tryButtonActionPerformed()
     {
-        preferences.setProject( projectTextField.getText() );
+        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
         char[] pw = passwordPasswordField.getPassword();
         preferences.setPassword( String.valueOf( pw ) );
         preferences.setUserName( usernaneTextField.getText() );
         preferences.setJIRAURL( urlTextField.getText() );
 
-        if( jiraInterface.attemptConnection() )
+        if( jiraInterface.connectedToJira() )
         {
             tryJIRASettingsLabel.setText( "Success!" );
+            
+            jiraInterface.getProjects();
+            String[] projectNames = jiraInterface.getProjectNames();
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>( projectNames );
+            projectCombo.setModel( model );
         }
         else
         {
             tryJIRASettingsLabel.setText( "Sorry, failed!" );
         }
         System.out.println("1");
-        jiraInterface.getProjects();
+        
 //        ComboBoxPopup result = controller.generateJIRAData();
 //        if ( result != null )
 //        {
