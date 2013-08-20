@@ -3,6 +3,7 @@ package view;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
@@ -12,6 +13,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
@@ -69,6 +71,8 @@ public class Configuration extends JDialog
 
 	private Semaphore semaphore;
 
+	private boolean connected;
+
     // -------------------------------------------------------------------------
     // CONSTRUCTOR
     // -------------------------------------------------------------------------
@@ -101,7 +105,11 @@ public class Configuration extends JDialog
      */
     private void loadPreferences()
     {
-        urlTextField.setText( preferences.getJiraUrl() );
+    	if( preferences.getJiraUrl().isEmpty() )
+    		urlTextField.setText( "http://" );
+    	else
+    		urlTextField.setText( preferences.getJiraUrl() );
+    	
         passwordPasswordField.setText( preferences.getPassword() );
         usernaneTextField.setText( preferences.getUserName() );
         projectCombo.setSelectedItem( preferences.getCurrentProject() );
@@ -170,22 +178,26 @@ public class Configuration extends JDialog
         clearDBButton = new JButton( "Clear" );
         clearDBButton.addActionListener( new ActionListener()
         {
+
             @Override
             public void actionPerformed( ActionEvent e )
             {
-                final WarningDialog warning = new WarningDialog(
-                        view,
-                        WarningDialog.CLEAR_DB,
-                        "Are you sure you want to clear the database?",
-                        "<html><FONT SIZE=\"5\" COLOR=\"FF0000\">All records will be deleted!</h1></html>",
-                        "Cancel", "Go Ahead" );
-
+            	
                 SwingUtilities.invokeLater( new Runnable()
                 {
                     @Override
                     public void run()
                     {
-                        warning.setVisible( true );
+                    	int choice = JOptionPane.showConfirmDialog( (JFrame)view,
+                                                                    "Are you sure you want to clear " +
+                                                                    "the database?",
+                                                                    "<html><FONT SIZE=\"5\" " +
+                              				   					    "COLOR=\"FF0000\">All records " +
+                              									    "will be deleted!</h1></html>", 
+                              									    JOptionPane.OK_CANCEL_OPTION,
+                              								   	    JOptionPane.WARNING_MESSAGE,
+                              									    null );  
+                    	clearButtonActionPerformed( choice );
                     }
                 } );
             }
@@ -209,13 +221,7 @@ public class Configuration extends JDialog
             @Override
             public void actionPerformed( ActionEvent arg0 )
             {
-                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-                preferences.setProjects( jiraInterface.getProjectNames() );
-                char[] pw = passwordPasswordField.getPassword();
-                preferences.setPassword( String.valueOf( pw ) );
-                preferences.setUserName( usernaneTextField.getText() );
-                preferences.setJIRAURL( urlTextField.getText() );
-
+            	setPreferenceValues();
                 semaphore.release();
                 dispose();
             }
@@ -258,13 +264,10 @@ public class Configuration extends JDialog
      */
     private void tryButtonActionPerformed()
     {
-        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-        char[] pw = passwordPasswordField.getPassword();
-        preferences.setPassword( String.valueOf( pw ) );
-        preferences.setUserName( usernaneTextField.getText() );
-        preferences.setJIRAURL( urlTextField.getText() );
-
-        if( jiraInterface.connectedToJira() )
+    	setPreferenceValues();
+    	
+    	connected = jiraInterface.connectedToJira();
+        if( connected )
         {
             tryJIRASettingsLabel.setText( "Success!" );
             
@@ -277,30 +280,38 @@ public class Configuration extends JDialog
         {
             tryJIRASettingsLabel.setText( "Sorry, failed!" );
         }
-        System.out.println("1");
-        
-//        ComboBoxPopup result = controller.generateJIRAData();
-//        if ( result != null )
-//        {
-//            tryJIRASettingsLabel.setText( "Success!" );
-//            view.enableJIRAPanel( true );
-//            view.getJiraComboBox()
-//                    .setModel( result.getModel() );
-//            ControllerOld.getInstance().usingJIRA = true;
-//        }
-//        else
-//        {
-//            tryJIRASettingsLabel.setText( "Sorry, failed!" );
-//        }
     }
+    
 
-    /*
-     * Just for testing
-     */
-    // public static void main(String args[])
-    // {
-    // JFrame frame = new JFrame();
-    // Configuration config = new Configuration(frame);
-    // config.setVisible(true);
-    // }
+	private void clearButtonActionPerformed( int choice )
+    {
+    	// Destroy the database and all data.
+        if( choice == 0 )
+        {
+        	try
+            {
+	            database.dropDataBase();
+            }
+            catch( SQLException e )
+            {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }        
+        }
+    }
+	
+    private void setPreferenceValues()
+    {        
+        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
+        preferences.setProjects( jiraInterface.getProjectNames() );
+        char[] pw = passwordPasswordField.getPassword();
+        preferences.setPassword( String.valueOf( pw ) );
+        preferences.setUserName( usernaneTextField.getText() );
+        
+        String url = urlTextField.getText();
+        if( url.toLowerCase().startsWith( "http://" ) || url.toLowerCase().startsWith( "https://" ))
+        	preferences.setJiraUrl( urlTextField.getText() );
+        else
+        	preferences.setJiraUrl( "http://" + urlTextField.getText() );
+    }
 }

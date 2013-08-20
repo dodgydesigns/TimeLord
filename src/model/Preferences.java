@@ -52,7 +52,7 @@ public class Preferences implements Serializable
     private static final String JIRA_URL = "jira.url";
     private static final String JIRA_PROJECT = "jira.project";
     private static final String JIRA_CURRENT_PROJECT = "jira.current.project";
-    
+    private static final String JIRA_ISSUES = "jira.issues";
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
@@ -207,7 +207,7 @@ public class Preferences implements Serializable
     /**
      * @param The address of the Jira server.
      */
-    public void setJIRAURL( String url )
+    public void setJiraUrl( String url )
     {
         preferences.put( JIRA_URL, url );
         saveToDisk();
@@ -247,6 +247,47 @@ public class Preferences implements Serializable
         	}
         	saveToDisk();
     	}
+    }
+    
+    /**
+     * @param issues
+     */
+    public void setIssuesForProject( ArrayList<String[]> issues )
+    {
+    	int i = 0;
+    	for( String[] issue : issues )
+    	{
+    		preferences.put( JIRA_ISSUES + "." + i + "." + "key", issue[0] );
+    		preferences.put( JIRA_ISSUES + "." + i + "." + "created", issue[1] );
+    		preferences.put( JIRA_ISSUES + "." + i + "." + "summary", issue[2] );
+    	}
+    }
+    
+    /**
+     * @return
+     */
+    public ArrayList<String[]> getIssuesForProject()
+    {
+    	ArrayList<String[]> issues = new ArrayList<String[]>();
+    	
+    	for( String key : preferences.keySet() )
+    	{
+    		if( key.contains(JIRA_ISSUES) )
+    		{
+    			String[] fields = new String[3];
+    			
+    			if( key.contains("key") )
+    				fields[0] = preferences.get( key );
+    			if( key.contains("created") )
+    				fields[0] = preferences.get( key );
+    			if( key.contains("summary") )
+    				fields[0] = preferences.get( key );
+    			
+    			issues.add( fields );
+    		}
+    	}
+    	
+    	return issues;
     }
     
     /**

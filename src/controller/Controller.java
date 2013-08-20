@@ -19,6 +19,7 @@
 package controller;
 
 import java.awt.Frame;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
@@ -86,45 +87,37 @@ public class Controller
     //----------------------------------------------------------
     private void startupTimeLord()
     {
+    	// Get the configuration dialog ready in case there is a problem starting up e.g.
+    	// there is no preferences file or the Jira connection failed.
     	Semaphore semaphore = new Semaphore( 1 );
-
+        
         // If a preferences file does not already exist, create the file and display the 
         // configuration dialog.
         if( !preferences.readExistingPrefsFromDisk() || !jiraInterface.connectedToJira() )
         {
             preferences.saveToDisk();
             
-        	try
+            try
             {
-	            semaphore.acquire();
-	            JDialog configDialog = new Configuration( this, semaphore );
-	            configDialog.setVisible( true );
+    	        semaphore.acquire();
             }
-            catch( InterruptedException e )
+            catch( InterruptedException e1 )
             {
-	            // TODO Auto-generated catch block
-	            e.printStackTrace();
+    	        // TODO Auto-generated catch block
+    	        e1.printStackTrace();
             }
+            JDialog configDialog = new Configuration( this, semaphore );
+            
+            configDialog.setVisible( true );
         }
-
+     
         // Start drawing the GUI
+		ArrayList<String[]> issues = getJiraIssues();
+        view.setJiraComboBox( issues );
         view.initComponents();
-        
-        setDateLabel();
-        
-        try
-        {
-        	String project = preferences.getCurrentProject();
-	        for(String[] issue:jiraInterface.getIssues( preferences.getUserName(), project ))
-	        {
-	        	System.out.println(issue[0] + " " + issue[1] + " " + issue[2]);
-	        }
-        }
-        catch( XmlRpcException e )
-        {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
-        }
+    
+		setDateLabel();
+		System.out.println(preferences.getCurrentProject());
         view.setVisible( true );
     }
     
@@ -163,6 +156,9 @@ public class Controller
         timer.scheduleAtFixedRate( dateUpdater, 0, 60*60*1000 );
     }
 
+    /**
+     * @return
+     */
     public int getDayOfWeek()
     {
         DateTime dt = new DateTime();
@@ -170,6 +166,80 @@ public class Controller
         return dt.getDayOfWeek();
     }
 
+    /**
+     * @return
+     */
+    public ArrayList<String[]> getJiraIssues()
+    {
+
+        int i = 0;
+        ArrayList<String[]> issues = new ArrayList<String[]>();
+
+        try
+        {
+        	issues = jiraInterface.getIssues();
+        }
+        catch( XmlRpcException e )
+        {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+        }
+        String[][] jiraData = new String[2][issues.size()];
+
+        for ( String[] entries : issues )
+        {
+            jiraData[0][i] = entries[0];
+            jiraData[1][i] = entries[2];
+            i++;
+        }
+
+        return issues;
+    }
+    
+//    /**
+//     * @param project
+//     * @return
+//     * @throws InterruptedException
+//     * @throws ExecutionException
+//     */
+//    @SuppressWarnings( "unchecked" )
+//    private ArrayList<String[]> getJiraIssues( final String project )
+//            throws InterruptedException, ExecutionException
+//    {
+//        final SwingWorker<?, ?> jiraWorker = new SwingWorker<ArrayList<String[]>, Void>()
+//        {
+//
+//            @Override
+//            protected ArrayList<String[]> doInBackground() throws Exception
+//            {
+//                ArrayList<String[]> jiraIssues = new ArrayList<String[]>();
+//                try
+//                {
+//                    String token = jiraInterface.getToken();
+//
+//                    if ( token != null )
+//                    {
+//                        jiraIssues = jiraInterface.getIssues( preferences.getUserName(), project );
+//                        jiraInterface.logout();
+//                    }
+//                    else
+//                    {
+//                        // new Warning(m_tmpController, "Get JIRA Issues", true,
+//                        // "There was a major probelm connecting to the JIRA server.",
+//                        // "OK");
+//                    }
+//                }
+//                catch ( XmlRpcException e )
+//                {
+//                    e.printStackTrace();
+//                }
+//                return jiraIssues;
+//            }
+//        };
+//        jiraWorker.execute();
+//
+//        return (ArrayList<String[]>) jiraWorker.get();
+//    }
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////

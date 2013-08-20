@@ -28,7 +28,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Vector;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
 import javax.net.ssl.HostnameVerifier;
@@ -37,15 +36,13 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
-import view.Configuration;
-import view.WarningDialog;
 import controller.Controller;
 
 /**
@@ -255,19 +252,17 @@ public class JiraInterface
      * @param user - the user assigned each issue
      * @param project - the project the issues belong to
      * 
-     * @return - an array of strings containing the issue, a description and
-     *         date.
+     * @return Array of strings containing the issue, a description and date.
      * 
      * @throws XmlRpcException
      */
-    public ArrayList<String[]> getIssues( String user, String project )
-            throws XmlRpcException
+    public ArrayList<String[]> getIssues() throws XmlRpcException
     {
         ArrayList<String[]> returnArray = new ArrayList<String[]>();
 
         Vector<String> parameters = new Vector<String>( 2 );
         parameters.add( loginToken );
-        parameters.add( project );
+        parameters.add( preferences.getCurrentProject() );
 
         if ( loginToken != null )
         {
@@ -278,8 +273,8 @@ public class JiraInterface
             {
                 Map<?, ?> issue = (Map<?, ?>) issues[i];
 
-                if ( issue.get( "assignee" ) != null
-                        && issue.get( "assignee" ).equals( user ) )
+                if ( issue.get( "assignee" ) != null && 
+                	 issue.get( "assignee" ).equals( preferences.getUserName() ) )
                 {
                     if ( !issue.get( "status" ).equals( STATUS_CLOSED )
                             && !issue.get( "status" ).equals( STATUS_RESOLVED ) )
@@ -323,11 +318,10 @@ public class JiraInterface
             {
                 public void run()
                 {
-                    WarningDialog warning = new WarningDialog(
-                            null, WarningDialog.JIRA_URL,
-                            "Could not connect to server: \n" + jiraURL,
-                            "Try Again?", "No", "Yes" );
-                    warning.setVisible( true );
+                    JOptionPane.showMessageDialog( null, "Could not connect to server: \n" + 
+							 							 jiraURL + "\n\n" +
+							 							 "Please try again later.", "Jira Connection",
+						   								 JOptionPane.WARNING_MESSAGE );
                 }
             } );
         }
@@ -383,6 +377,11 @@ public class JiraInterface
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
+    public String getToken()
+    {
+    	return loginToken;
+    }
+    
     public String[] getProjectNames()
     {
     	return projectNames;

@@ -38,11 +38,11 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -63,6 +63,7 @@ import javax.swing.table.TableColumn;
 
 import net.miginfocom.swing.MigLayout;
 import widgets.ColourCellRenderer;
+import widgets.ComboBoxPopup;
 import widgets.LimitedLinesDocument;
 import widgets.MultiLineCellRenderer;
 import controller.Controller;
@@ -93,7 +94,7 @@ public class View extends JFrame implements ActionListener
     private JButton configButton;
     private JButton dayBackButton;
     private JButton dayForwardButton;
-    private JComboBox<String> jiraComboBox;
+    private ComboBoxPopup jiraComboBox;
     private JRadioButton notJiraRadioButton;
     private JRadioButton notWorkRadioButton;
     private JButton quitButton;
@@ -216,10 +217,6 @@ public class View extends JFrame implements ActionListener
         reportButton.setBackground( null );
         reportButton.setBorder( null );
         reportButton.addActionListener( this );
-        
-        // ComboBox
-        jiraComboBox = new JComboBox<String>();
-//        jiraComboBox = controller.generateJIRAData(); TODO
 
         // TextArea
         // Limit the maximum number of characters able to be entered to 97.
@@ -439,8 +436,28 @@ public class View extends JFrame implements ActionListener
         col4.setPreferredWidth( DESCRIPTION_COL_WIDTH );
         col4.setCellRenderer( new MultiLineCellRenderer() );
     }
-    
-    
+
+	/**
+	 * @param issues
+	 */
+	public void setJiraComboBox( ArrayList<String[]> issues )
+    {
+        String[][] jiraData = new String[2][issues.size()];
+
+        int i = 0;
+        for ( String[] entries : issues )
+        {
+            jiraData[0][i] = entries[0];
+            jiraData[1][i] = entries[2];
+            i++;
+        }
+
+        jiraComboBox = new ComboBoxPopup( jiraData[0], jiraData[1] );
+        
+//		view.enableJIRAPanel( true );
+//		view.getJiraComboBox().setModel( result.getModel() );
+//		usingJIRA = true;
+    }   
     
     
     
@@ -533,6 +550,7 @@ public class View extends JFrame implements ActionListener
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------
+
     
     
     
