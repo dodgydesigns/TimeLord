@@ -4,11 +4,14 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -55,7 +58,8 @@ public class Configuration extends JDialog
     private JTextField usernaneTextField;
     private JPasswordField passwordPasswordField;
     private JComboBox<String> projectCombo;
-
+    private JCheckBox connectToJira;
+    
     private JButton tryButton;
     private JButton clearDBButton;
     private JButton backupDBButton;
@@ -72,6 +76,8 @@ public class Configuration extends JDialog
 	private Semaphore semaphore;
 
 	private boolean connected;
+
+	private Map<String, String> projects;
 
     // -------------------------------------------------------------------------
     // CONSTRUCTOR
@@ -105,14 +111,10 @@ public class Configuration extends JDialog
      */
     private void loadPreferences()
     {
-    	if( preferences.getJiraUrl().isEmpty() )
-    		urlTextField.setText( "http://" );
-    	else
-    		urlTextField.setText( preferences.getJiraUrl() );
-    	
+    	connectToJira.setSelected( preferences.connectToJiraAtStartup() );
+    	urlTextField.setText( preferences.getJiraUrl() );
         passwordPasswordField.setText( preferences.getPassword() );
         usernaneTextField.setText( preferences.getUserName() );
-        projectCombo.setSelectedItem( preferences.getCurrentProject() );
     }
 
     private void initComponents()
@@ -140,10 +142,14 @@ public class Configuration extends JDialog
         passwordPasswordField = new JPasswordField();
         
         // Combo for available projects
-		String[] projects = (preferences.getProjects().length > 0) ? preferences.getProjects() 
-		                                                           : new String[1];
-        projectCombo = new JComboBox<String>( projects );
-
+        Map<String,String> projects = (preferences.getProjects() != null) ? preferences.getProjects() 
+                                                                          : new HashMap<String,String>();
+        
+        projectCombo = new JComboBox<String>( projects.keySet().toArray( new String[projects.size()] ) );
+      
+        if( preferences.getCurrentProject() != null )
+        	projectCombo.setSelectedItem( preferences.getCurrentProject() );
+        
         // Buttons
         tryButton = new JButton( "Try..." );
         tryButton.addActionListener( new ActionListener()
@@ -154,7 +160,18 @@ public class Configuration extends JDialog
                 tryButtonActionPerformed();
             }
         } );
-
+        
+        connectToJira = new JCheckBox();
+        connectToJira.addActionListener( new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed( ActionEvent e )
+			{
+				preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
+			}
+		} );
+        
         backupDBButton = new JButton( "Backup" );
         backupDBButton.addActionListener( new ActionListener()
         {
@@ -222,6 +239,8 @@ public class Configuration extends JDialog
             public void actionPerformed( ActionEvent arg0 )
             {
             	setPreferenceValues();
+            	// Set this now that they've selected a project
+                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
                 semaphore.release();
                 dispose();
             }
@@ -234,6 +253,8 @@ public class Configuration extends JDialog
         add( jiraPanel, "wrap, span, grow" );
         add( databasePanel, "wrap 15, span, grow" );
 
+        jiraPanel.add( connectToJira );
+        jiraPanel.add( new JLabel( "Connect to Jira at startup" ), "wrap, span, grow" );
         jiraPanel.add( new JLabel( "JIRA URL:" ) );
         jiraPanel.add( urlTextField, "wrap, span, grow" );
         jiraPanel.add( new JLabel( "Username:" ) );
@@ -266,14 +287,22 @@ public class Configuration extends JDialog
     {
     	setPreferenceValues();
     	
-    	connected = jiraInterface.connectedToJira();
+    	connected = jiraInterface.connectToJira();
         if( connected )
         {
             tryJIRASettingsLabel.setText( "Success!" );
             
+            // Retrieve all the projects and hold in jiraInterface.
             jiraInterface.getProjects();
-            String[] projectNames = jiraInterface.getProjectNames();
-            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>( projectNames );
+
+            projects = new HashMap<String,String>();
+            projects.putAll( jiraInterface.getProjectsKeyName() );
+            preferences.setProjects( projects );
+
+			DefaultComboBoxModel<String> model =
+			    new DefaultComboBoxModel<String>(
+			                                      projects.values().toArray(
+			                                                                 new String[projects.size()] ) );
             projectCombo.setModel( model );
         }
         else
@@ -302,8 +331,6 @@ public class Configuration extends JDialog
 	
     private void setPreferenceValues()
     {        
-        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-        preferences.setProjects( jiraInterface.getProjectNames() );
         char[] pw = passwordPasswordField.getPassword();
         preferences.setPassword( String.valueOf( pw ) );
         preferences.setUserName( usernaneTextField.getText() );

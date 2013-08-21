@@ -29,6 +29,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Store the user configuration details and preferences as key/value pair in a
@@ -50,14 +51,15 @@ public class Preferences implements Serializable
     private static final String JIRA_USERNAME = "jira.user";
     private static final String JIRA_PASSWORD = "jira.password";
     private static final String JIRA_URL = "jira.url";
-    private static final String JIRA_PROJECT = "jira.project";
+    private static final String JIRA_PROJECTS = "jira.project";
     private static final String JIRA_CURRENT_PROJECT = "jira.current.project";
     private static final String JIRA_ISSUES = "jira.issues";
+	private static final String CONNECT_TO_JIRA = "jira.connect";
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
     private static String prefsPath;
-    private static HashMap<String, String> preferences;
+    private static HashMap<String, Object> preferences;
 
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -67,7 +69,7 @@ public class Preferences implements Serializable
         // Sort out location and name of preferences file
         prefsPath = System.getProperty( "user.home" ) + "/" + ".TimeLord.prefs";
         
-        preferences = new HashMap<String, String>();
+        preferences = new HashMap<String, Object>();
     }
 
     //----------------------------------------------------------
@@ -120,7 +122,7 @@ public class Preferences implements Serializable
                 FileInputStream fileIn = new FileInputStream( prefs );
                 ObjectInputStream in = new ObjectInputStream( fileIn );
     
-                preferences = (HashMap<String, String>)in.readObject();
+                preferences = (HashMap<String,Object>)in.readObject();
     
                 in.close();
                 fileIn.close();
@@ -148,7 +150,7 @@ public class Preferences implements Serializable
      */
     public String getUserName()
     {
-        String result = preferences.get( JIRA_USERNAME );
+        String result = (String)preferences.get( JIRA_USERNAME );
         if ( result == null )
         {
             result = "";
@@ -172,7 +174,7 @@ public class Preferences implements Serializable
     public String getPassword()
     {
         readExistingPrefsFromDisk();
-        String result = preferences.get( JIRA_PASSWORD );
+        String result = (String)preferences.get( JIRA_PASSWORD );
         if ( result == null )
         {
             result = "";
@@ -195,7 +197,7 @@ public class Preferences implements Serializable
      */
     public String getJiraUrl()
     {
-        String result = preferences.get( JIRA_URL );
+        String result = (String)preferences.get( JIRA_URL );
         if ( result == null )
         {
             result = "";
@@ -213,40 +215,41 @@ public class Preferences implements Serializable
         saveToDisk();
     }
 
+	/**
+	 * @param selected
+	 */
+	public void setConnectToJiraAtStartup( boolean selected )
+    {
+		preferences.put( CONNECT_TO_JIRA, selected );
+		saveToDisk();
+    }
+	
+	/**
+	 * @return
+	 */
+	public boolean connectToJiraAtStartup()
+	{
+		boolean connect = preferences.get(CONNECT_TO_JIRA) != null ? (Boolean)preferences.get( CONNECT_TO_JIRA )
+		                                                           : false;
+		return connect;
+	}
+	
     /**
      * @return The project the user is logging time against.
      */
-    public String[] getProjects()
+    @SuppressWarnings("unchecked")
+    public Map<String,String> getProjects()
     {
-    	ArrayList<String> tmpNames = new ArrayList<String>();
-    	
-    	for( String key : preferences.keySet() )
-    	{
-    		if( key.contains(JIRA_PROJECT) )
-    		{
-    			tmpNames.add( preferences.get( key ) );
-    		}
-    	}
-    	
-    	String[] projectNames = new String[tmpNames.size()];
-    	tmpNames.toArray( projectNames );
-    	
-        return projectNames;
+        return (Map<String,String>)preferences.get( JIRA_PROJECTS );
     }
     
     /**
      * @param The project the user is logging time against.
      */
-    public void setProjects( String[] projects )
+    public void setProjects( Map<String,String> projects )
     {
-    	if( projects != null )
-    	{
-        	for( int i = 0; i < projects.length; i++ )
-        	{
-        		preferences.put( JIRA_PROJECT + "." + i, projects[i] );
-        	}
+        	preferences.put( JIRA_PROJECTS, projects );
         	saveToDisk();
-    	}
     }
     
     /**
@@ -254,40 +257,17 @@ public class Preferences implements Serializable
      */
     public void setIssuesForProject( ArrayList<String[]> issues )
     {
-    	int i = 0;
-    	for( String[] issue : issues )
-    	{
-    		preferences.put( JIRA_ISSUES + "." + i + "." + "key", issue[0] );
-    		preferences.put( JIRA_ISSUES + "." + i + "." + "created", issue[1] );
-    		preferences.put( JIRA_ISSUES + "." + i + "." + "summary", issue[2] );
-    	}
+		preferences.put( JIRA_ISSUES, issues );
+    	saveToDisk();
     }
     
     /**
      * @return
      */
+    @SuppressWarnings("unchecked")
     public ArrayList<String[]> getIssuesForProject()
     {
-    	ArrayList<String[]> issues = new ArrayList<String[]>();
-    	
-    	for( String key : preferences.keySet() )
-    	{
-    		if( key.contains(JIRA_ISSUES) )
-    		{
-    			String[] fields = new String[3];
-    			
-    			if( key.contains("key") )
-    				fields[0] = preferences.get( key );
-    			if( key.contains("created") )
-    				fields[0] = preferences.get( key );
-    			if( key.contains("summary") )
-    				fields[0] = preferences.get( key );
-    			
-    			issues.add( fields );
-    		}
-    	}
-    	
-    	return issues;
+    	return (ArrayList<String[]>)preferences.get( JIRA_ISSUES );
     }
     
     /**
@@ -295,13 +275,7 @@ public class Preferences implements Serializable
      */
     public String getCurrentProject()
     {
-        String result = preferences.get( JIRA_CURRENT_PROJECT );
-        if ( result == null )
-        {
-            result = "";
-        }
-
-        return result;
+    	return (String)preferences.get( JIRA_CURRENT_PROJECT );
     }
     
     /**

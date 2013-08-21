@@ -27,6 +27,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableModel;
 
 import model.JiraInterface;
@@ -86,15 +88,15 @@ public class Controller
     //                    INSTANCE METHODS
     //----------------------------------------------------------
     private void startupTimeLord()
-    {
-    	// Get the configuration dialog ready in case there is a problem starting up e.g.
-    	// there is no preferences file or the Jira connection failed.
-    	Semaphore semaphore = new Semaphore( 1 );
-        
+    {   
         // If a preferences file does not already exist, create the file and display the 
         // configuration dialog.
-        if( !preferences.readExistingPrefsFromDisk() || !jiraInterface.connectedToJira() )
+        if( !preferences.readExistingPrefsFromDisk() || 
+        	(preferences.connectToJiraAtStartup() && !jiraInterface.connectToJira()) )
         {
+        	// Get the configuration dialog ready in case there is a problem starting up e.g.
+        	// there is no preferences file or the Jira connection failed.
+        	Semaphore semaphore = new Semaphore( 1 );
             preferences.saveToDisk();
             
             try
@@ -112,13 +114,22 @@ public class Controller
         }
      
         // Start drawing the GUI
+        // Get the issues from the Jira server
 		ArrayList<String[]> issues = getJiraIssues();
         view.setJiraComboBox( issues );
         view.initComponents();
     
 		setDateLabel();
-		System.out.println(preferences.getCurrentProject());
-        view.setVisible( true );
+		
+		SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+		        view.setVisible( true );				
+			}
+		} );
     }
     
     /**
@@ -175,15 +186,48 @@ public class Controller
         int i = 0;
         ArrayList<String[]> issues = new ArrayList<String[]>();
 
-        try
+        if( jiraInterface.getToken() != null )
         {
-        	issues = jiraInterface.getIssues();
+            try
+            {
+            	issues = jiraInterface.getIssues();
+            	preferences.setIssuesForProject( issues );
+            }
+            catch( XmlRpcException e )
+            {
+    	        // TODO Auto-generated catch block
+    	        e.printStackTrace();
+            }
         }
-        catch( XmlRpcException e )
+        else
         {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
+        	issues = preferences.getIssuesForProject();
         }
+
+        while( issues == null || issues.isEmpty() )
+        {
+        	int selection = JOptionPane.showConfirmDialog( view, 
+                        	                               "couldn't get jira issues", 
+                        	                               "jira coonect", 
+                        	                               JOptionPane.OK_CANCEL_OPTION );
+        	if( selection == JOptionPane.OK_OPTION )
+        	{
+				Semaphore semaphore = new Semaphore( 1 );
+				Configuration configuration = new Configuration( this, semaphore );
+				configuration.setVisible( true );
+        	}
+        	try
+            {
+	            issues = jiraInterface.getIssues();
+            }
+            catch( XmlRpcException e )
+            {
+	            // TODO Auto-generated catch block
+	            e.printStackTrace();
+            }
+        }
+    	preferences.setIssuesForProject( issues );
+
         String[][] jiraData = new String[2][issues.size()];
 
         for ( String[] entries : issues )

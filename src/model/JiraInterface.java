@@ -26,6 +26,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -83,7 +84,7 @@ public class JiraInterface
     private String jiraPassword;
     private String loginToken;
     private XmlRpcClient rpcClient;
-	private String[] projectNames;
+	private Map<String,String> projects;
 	private Preferences preferences;
 
     //----------------------------------------------------------
@@ -184,7 +185,7 @@ public class JiraInterface
 	 * 
 	 * @return Whether a successful connection was possible using the supplied connection details.
 	 */
-	public boolean connectedToJira()
+	public boolean connectToJira()
     {		
         jiraURL = preferences.getJiraUrl();
         jiraUsername = preferences.getUserName();
@@ -210,17 +211,17 @@ public class JiraInterface
      * Get all the projects on the JIRA server.
      * 
      */
-    public String[] getProjects()
+    public void getProjects()
     {
         // Retrieve projects
         Vector<String> loginTokenVector = new Vector<String>( 1 );
         loginTokenVector.add( loginToken );
 
-        Object[] projects = null;
+        Object[] projectsKeyName = null;
         try
         {
-	        projects = (Object[]) rpcClient.execute( "jira1.getProjectsNoSchemes", 
-	                                                   loginTokenVector );
+	        projectsKeyName = (Object[]) rpcClient.execute( "jira1.getProjectsNoSchemes", 
+	                                                 loginTokenVector );
         }
         catch( XmlRpcException e )
         {
@@ -228,22 +229,14 @@ public class JiraInterface
 	        e.printStackTrace();
         }
 
-        projectNames = new String[projects.length];
+        projects = new HashMap<String,String>();
         // Print projects
-        for ( int i = 0; i < projects.length; i++ )
+        for ( int i = 0; i < projectsKeyName.length; i++ )
         {
-            Map<?, ?> project = (Map<?, ?>) projects[i];
-            projectNames[i] = project.get( "name" ).toString();
+            Map<?, ?> project = (Map<?, ?>) projectsKeyName[i];
             
-//            if ( project.get( "name" ).toString().toLowerCase().equals( "cnr" ) )
-//            {
-//                System.out.println( "KEY: " + project.get( "key" ) + "\tNAME: "
-//                        + project.get( "name" ) + "\tLEAD: "
-//                        + project.get( "lead" ) );
-//            }
-        }
-        
-		return projectNames;
+            projects.put( project.get( "key" ).toString(), project.get( "name" ).toString() );
+        }        
     }
 
     /**
@@ -382,9 +375,12 @@ public class JiraInterface
     	return loginToken;
     }
     
-    public String[] getProjectNames()
+    /**
+     * @return
+     */
+    public Map<String,String> getProjectsKeyName()
     {
-    	return projectNames;
+    	return projects;
     }
     //----------------------------------------------------------
     //                     INNER CLASSES

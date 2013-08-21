@@ -39,10 +39,12 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -130,7 +132,7 @@ public class View extends JFrame implements ActionListener
         // setDefaultCloseOperation(stopRecording());
         setTitle( "TimeLord" );
         setBackground( new Color( 85, 91, 106 ) );
-        setPreferredSize( new Dimension(648, 700) );
+        setPreferredSize( new Dimension(680, 700) );
         setResizable( false );
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
@@ -293,7 +295,7 @@ public class View extends JFrame implements ActionListener
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
         dataEntryPanel.add( notJiraRadioButton );
         dataEntryPanel.add( taskIconLabel );
-        dataEntryPanel.add( jiraComboBox, "grow, wrap, hmax 28" );
+        dataEntryPanel.add( jiraComboBox, "wrap, hmax 28" );
         dataEntryPanel.add( descriptionTextArea, "span 5, grow, hmax 100" );
         dataEntryPanel.setBackground( new Color( 115, 121, 136 ) );
         TitledBorder border = BorderFactory.createTitledBorder( null, 
@@ -453,7 +455,7 @@ public class View extends JFrame implements ActionListener
         }
 
         jiraComboBox = new ComboBoxPopup( jiraData[0], jiraData[1] );
-        
+        jiraComboBox.setPreferredSize( new Dimension( 300, 28 ) );
 //		view.enableJIRAPanel( true );
 //		view.getJiraComboBox().setModel( result.getModel() );
 //		usingJIRA = true;
@@ -512,7 +514,9 @@ public class View extends JFrame implements ActionListener
             }
             else if( e.getSource() == configButton )
             {
-//                configButtonActionPerformed();
+            	Semaphore semaphore = new Semaphore( 1 );
+                JDialog configDialog = new Configuration( controller, semaphore );
+                configDialog.setVisible( true );
             }
 
         }
