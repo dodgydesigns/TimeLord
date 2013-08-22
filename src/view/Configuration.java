@@ -1,3 +1,22 @@
+/*
+ *   Copyright 2013 Dodgy Designs
+ *
+ *
+ *   NOTICE:  All information contained herein is, and remains
+ *            the property of Dodgy Designs.
+ *            The intellectual and technical concepts contained
+ *            herein are proprietary to Dodgy Designs.
+ *            Dissemination of this information or reproduction of
+ *            this material is strictly forbidden unless prior written
+ *            permission is obtained from Dodgy Designs.
+ *
+ *   Unless required by applicable law or agreed to in writing,
+ *   software distributed under the License is distributed on an
+ *   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *   KIND, either express or implied.  See the License for the
+ *   specific language governing permissions and limitations
+ *   under the License.
+ */
 package view;
 
 import java.awt.Color;
@@ -20,7 +39,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 import model.JiraInterface;
 import model.Preferences;
@@ -29,59 +47,49 @@ import net.miginfocom.swing.MigLayout;
 import controller.Controller;
 
 /**
- * Provide configuration control for JIRA clients. This Swing component uses
- * MigLayout (http://www.miglayout.com/).
- * 
- * @author mullsy
- * 
+ * This class provides a UI to set all the parameters required to log into a Jira server.  The
+ * data entered here is stored in the preferences and any projects discovered on the Jira server
+ * are also stored for off-line use.
+ * </p>
+ * It is also possible to work with the database here:
+ * <ul>
+ *   <li>Backup or restore a database.</li>
+ *   <li>Delete the current database.</li>
+ * </ul>
  */
-public class Configuration extends JDialog
+public class Configuration extends JDialog implements ActionListener
 {
+	//----------------------------------------------------------
+	//                    STATIC VARIABLES
+	//----------------------------------------------------------
     /**
-	 * 
+	 * Configuration
 	 */
     private static final long serialVersionUID = -1869584080186759637L;
-    // --------------------------------------------------------------------------
-    // MEMBER VARIABLES
-    // --------------------------------------------------------------------------
 
-    // -------------------------------------------------------------------------
-    // SWING VARIABLES
-    // -------------------------------------------------------------------------
-    private JPanel jiraPanel;
-    private JPanel databasePanel;
-
-    private JLabel logoLabel;
-    private JLabel tryJIRASettingsLabel;
+	//----------------------------------------------------------
+	//                   INSTANCE VARIABLES
+	//----------------------------------------------------------
 
     private JTextField urlTextField;
     private JTextField usernaneTextField;
     private JPasswordField passwordPasswordField;
     private JComboBox<String> projectCombo;
     private JCheckBox connectToJira;
-    
-    private JButton tryButton;
-    private JButton clearDBButton;
-    private JButton backupDBButton;
-    private JButton restroreDBButton;
-    private JButton cancelButton;
-    private JButton okButton;
+    private JLabel tryJIRASettingsLabel;
     
     private JFrame view;
     private Preferences preferences;
     private SqlInterface database;
 
     private JiraInterface jiraInterface;
-
 	private Semaphore semaphore;
-
 	private boolean connected;
-
 	private Map<String, String> projects;
 
-    // -------------------------------------------------------------------------
-    // CONSTRUCTOR
-    // -------------------------------------------------------------------------
+	//----------------------------------------------------------
+	//                      CONSTRUCTORS
+	//----------------------------------------------------------
     public Configuration( Controller controller, Semaphore semaphore )
     {
         super( controller.getView() );
@@ -92,19 +100,14 @@ public class Configuration extends JDialog
         this.database = controller.getDatabase();
         this.jiraInterface = controller.getJiraInterface();
 
-        super.setBackground( new Color( 255, 255, 255 ) );
-
-        setLayout( new MigLayout("", "[][grow]", "[][shrink 0]") );
-
         initComponents();
         loadPreferences();
-        layoutComponents();
         setLocationRelativeTo( view );
     }
 
-    // -------------------------------------------------------------------------
-    // PRIVATE METHODS
-    // -------------------------------------------------------------------------
+	//----------------------------------------------------------
+	//                    INSTANCE METHODS
+	//----------------------------------------------------------
     /**
      * Read the preferences from disk and fill the text fields with the
      * appropriate data.
@@ -117,24 +120,34 @@ public class Configuration extends JDialog
         usernaneTextField.setText( preferences.getUserName() );
     }
 
+    /**
+     * Create and layout the UI components.
+     */
     private void initComponents()
     {
+        setBackground( new Color( 255, 255, 255 ) );
+        setLayout( new MigLayout("", "[][grow]", "[][shrink 0]") );
     	setModal( true );
         getContentPane().setBackground( Color.WHITE );
 
         // Panels
-        jiraPanel = new JPanel( new MigLayout( "", "[][grow]", "[shrink 0][shrink 0]" ) );
+        JPanel jiraPanel = new JPanel( new MigLayout( "", "[][grow]", "[shrink 0][shrink 0]" ) );
         jiraPanel.setBorder( BorderFactory.createTitledBorder( "JIRA" ) );
         jiraPanel.setBackground( new java.awt.Color( 245, 245, 255 ) );
-        databasePanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
+        
+        JPanel databasePanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
         databasePanel.setBorder( BorderFactory.createTitledBorder( "Database" ) );
         databasePanel.setBackground( new java.awt.Color( 245, 245, 255 ) );
 
         // Labels
-        logoLabel = new JLabel( new javax.swing.ImageIcon( getClass().getResource( "/media/timelord logo.png" ) ) );
-        tryJIRASettingsLabel = new JLabel( "Try to connect using current settings:" );
-        logoLabel.setBackground( Color.WHITE );
-        logoLabel.setOpaque( true );
+		JLabel logoLabel =
+		    new JLabel(
+		                new javax.swing.ImageIcon(
+		                                           getClass().getResource(
+		                                                                   "/media/timelord logo.png" ) ) );
+		tryJIRASettingsLabel = new JLabel( "Try to connect using current settings:" );
+		logoLabel.setBackground( Color.WHITE );
+		logoLabel.setOpaque( true );
 
         // TextFields
         urlTextField = new JTextField();
@@ -146,109 +159,27 @@ public class Configuration extends JDialog
                                                                           : new HashMap<String,String>();
         
         projectCombo = new JComboBox<String>( projects.keySet().toArray( new String[projects.size()] ) );
-      
         if( preferences.getCurrentProject() != null )
         	projectCombo.setSelectedItem( preferences.getCurrentProject() );
+
+        // Checkbox
+        connectToJira = new JCheckBox();
+        connectToJira.addActionListener( this );
         
         // Buttons
-        tryButton = new JButton( "Try..." );
-        tryButton.addActionListener( new ActionListener()
-        {
-            @Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-                tryButtonActionPerformed();
-            }
-        } );
+        JButton tryButton = new JButton( "Try..." );
+        tryButton.addActionListener( this );
+        JButton backupDBButton = new JButton( "Backup" );
+        backupDBButton.addActionListener( this );
+        JButton restroreDBButton = new JButton( "Restore" );
+        restroreDBButton.addActionListener( this );
+        JButton clearDBButton = new JButton( "Clear" );
+        clearDBButton.addActionListener( this );
+        JButton cancelButton = new JButton( "Cancel" );
+        cancelButton.addActionListener( this );
+        JButton okButton = new JButton( "OK" );
+        okButton.addActionListener( this );
         
-        connectToJira = new JCheckBox();
-        connectToJira.addActionListener( new ActionListener()
-		{
-			
-			@Override
-			public void actionPerformed( ActionEvent e )
-			{
-				preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
-			}
-		} );
-        
-        backupDBButton = new JButton( "Backup" );
-        backupDBButton.addActionListener( new ActionListener()
-        {
-            @Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-                database.backupDB();
-            }
-        } );
-
-        restroreDBButton = new JButton( "Restore" );
-        restroreDBButton.addActionListener( new ActionListener()
-        {
-            @Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-                database.restoreDB();
-            }
-        } );
-
-        clearDBButton = new JButton( "Clear" );
-        clearDBButton.addActionListener( new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed( ActionEvent e )
-            {
-            	
-                SwingUtilities.invokeLater( new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                    	int choice = JOptionPane.showConfirmDialog( (JFrame)view,
-                                                                    "Are you sure you want to clear " +
-                                                                    "the database?",
-                                                                    "<html><FONT SIZE=\"5\" " +
-                              				   					    "COLOR=\"FF0000\">All records " +
-                              									    "will be deleted!</h1></html>", 
-                              									    JOptionPane.OK_CANCEL_OPTION,
-                              								   	    JOptionPane.WARNING_MESSAGE,
-                              									    null );  
-                    	clearButtonActionPerformed( choice );
-                    }
-                } );
-            }
-        } );
-
-        cancelButton = new JButton( "Cancel" );
-        cancelButton.addActionListener( new ActionListener()
-        {
-            @Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-                // TODO: undo any changes
-            	semaphore.release();
-                dispose();
-            }
-        } );
-
-        okButton = new JButton( "OK" );
-        okButton.addActionListener( new ActionListener()
-        {
-            @Override
-            public void actionPerformed( ActionEvent arg0 )
-            {
-            	setPreferenceValues();
-            	// Set this now that they've selected a project
-                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-                semaphore.release();
-                dispose();
-            }
-        } );
-    }
-
-    private void layoutComponents()
-    {
         add( logoLabel, "span, wrap 15" );
         add( jiraPanel, "wrap, span, grow" );
         add( databasePanel, "wrap 15, span, grow" );
@@ -278,9 +209,10 @@ public class Configuration extends JDialog
         add( okButton, "right, width 80:80:80," );
 
         pack();
+        urlTextField.requestFocus();
     }
 
-    /*
+    /**
      * Get the settings just entered and try to connect to JIRA server.
      */
     private void tryButtonActionPerformed()
@@ -310,12 +242,16 @@ public class Configuration extends JDialog
             tryJIRASettingsLabel.setText( "Sorry, failed!" );
         }
     }
-    
 
+	/**
+	 * This method drops the database thereby clearing any data contained in it.
+	 * 
+	 * @param choice Whether the OK or Cancel button was clicked.
+	 */
 	private void clearButtonActionPerformed( int choice )
     {
     	// Destroy the database and all data.
-        if( choice == 0 )
+        if( choice == JOptionPane.OK_OPTION )
         {
         	try
             {
@@ -323,12 +259,15 @@ public class Configuration extends JDialog
             }
             catch( SQLException e )
             {
-	            // TODO Auto-generated catch block
 	            e.printStackTrace();
             }        
         }
     }
 	
+    /**
+     * Write all the data entered into various fields to the preferences file.  This will only
+     * happen if a successful connection is made to the Jira server.
+     */
     private void setPreferenceValues()
     {        
         char[] pw = passwordPasswordField.getPassword();
@@ -341,4 +280,67 @@ public class Configuration extends JDialog
         else
         	preferences.setJiraUrl( "http://" + urlTextField.getText() );
     }
+
+	@Override
+    public void actionPerformed( ActionEvent e )
+    {
+		Object source = e.getSource();
+
+		if( source instanceof JButton )
+        {   
+			String buttonText = ((JButton)source).getText();
+
+			if( buttonText.toLowerCase().equals( "try..." ) )
+            {
+                tryButtonActionPerformed();
+            }	
+            if( buttonText.toLowerCase().equals( "backup" ) )
+            {
+                database.backupDB();
+            }	
+            if( buttonText.toLowerCase().equals( "restore" ) )
+            {
+                database.restoreDB();
+            }	
+            if( buttonText.toLowerCase().equals( "clear" ) )
+            {
+            	int choice = JOptionPane.showConfirmDialog( (JFrame)view,
+                                                            "Are you sure you want to clear " +
+                                                            "the database?",
+                                                            "<html><FONT SIZE=\"5\" " +
+                      				   					    "COLOR=\"FF0000\">All records " +
+                      									    "will be deleted!</h1></html>", 
+                      									    JOptionPane.OK_CANCEL_OPTION,
+                      								   	    JOptionPane.WARNING_MESSAGE,
+                      									    null );  
+            	clearButtonActionPerformed( choice );            
+        	}
+            if( buttonText.toLowerCase().equals( "ok" ) )
+            {
+            	setPreferenceValues();
+            	// Set this now that they've selected a project
+                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
+                semaphore.release();
+                dispose();
+            }
+            if( buttonText.toLowerCase().equals( "cancel" ) )
+            {
+                // TODO: undo any changes
+            	semaphore.release();
+                dispose();            
+            }
+        }
+		else if( source instanceof JCheckBox )
+		{
+			preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
+		}
+    }
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
+	
+	//----------------------------------------------------------
+	//                     INNER CLASSES
+	//----------------------------------------------------------
 }

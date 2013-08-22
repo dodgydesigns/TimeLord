@@ -8,10 +8,7 @@ import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
 /**
  * This class is responsible for propagating a JComboBox with data from the JIRA server including
- * task names and details. The details are displayed as a tooltip when a cell has focus.
- * 
- * @author mullsy
- * 
+ * task names and details. The details are displayed as a tool-tip when a cell has focus.
  */
 public class ComboBoxPopup extends JComboBox<String>
 {

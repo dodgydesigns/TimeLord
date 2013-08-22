@@ -64,6 +64,9 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
 import net.miginfocom.swing.MigLayout;
+
+import org.joda.time.DateTime;
+
 import widgets.ColourCellRenderer;
 import widgets.ComboBoxPopup;
 import widgets.LimitedLinesDocument;
@@ -81,15 +84,8 @@ public class View extends JFrame implements ActionListener
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
-    private JPanel bottomPanel;
-    private JPanel dataDisplayPanel;
-    private JPanel dataEntryPanel;
-    private JPanel topPanel;
+	private JPanel dataDisplayPanel;
     private JLabel dateLabel;
-    private JLabel dayValueLabel;
-    private JLabel taskIconLabel;
-    private JLabel timeLabel;
-    private JLabel weekValueLabel;
     private JTable taskTable;
     private JTextArea descriptionTextArea;
     private JButton reportButton;
@@ -104,6 +100,8 @@ public class View extends JFrame implements ActionListener
     private JProgressBar weekProgressBar;
     
     private Controller controller;
+	private JLabel beerLabel;
+	private JPanel bottomPanel;
     
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -147,19 +145,15 @@ public class View extends JFrame implements ActionListener
         dateLabel.setFont( new Font( "Lucida Grande", 1, 20 ) );
         dateLabel.setHorizontalAlignment( SwingConstants.CENTER );
 
-        timeLabel = new JLabel();
+        JLabel timeLabel = new JLabel();
         timeLabel.setFont( new Font( "Lucida Grande", 1, 36 ) );
 
-        taskIconLabel = new JLabel( "JIRA:" );
+        JLabel taskIconLabel = new JLabel( "JIRA:" );
         taskIconLabel.setIcon( new ImageIcon( getClass().getResource(
                 "/media/jiraicon.png" ) ) );
 
-        JLabel beerLabel = new JLabel();
-        beerLabel.setIcon( new ImageIcon( getClass().getResource(
-                "/media/beer.png" ) ) );
-
-        dayValueLabel = new JLabel();
-        weekValueLabel = new JLabel();
+        beerLabel = new JLabel();
+        beerLabel.setIcon( new ImageIcon( getClass().getResource( "/media/beer.png" ) ) );
 
         // Buttons
         dayBackButton = new JButton();
@@ -235,6 +229,7 @@ public class View extends JFrame implements ActionListener
                 descriptionTextArea.setCaretPosition( 0 );
             }
         } );
+        
         descriptionTextArea.setText( "Enter task description..." );
         descriptionTextArea.setBackground( new Color(125, 131, 146) );
         descriptionTextArea.addKeyListener( new KeyListener()
@@ -272,7 +267,7 @@ public class View extends JFrame implements ActionListener
         weekProgressBar = new JProgressBar();
         weekProgressBar.setMaximum( 5 );
         weekProgressBar.setMinimum( 1 );
-        weekProgressBar.setValue( controller.getDayOfWeek() );
+        weekProgressBar.setValue( new DateTime().getDayOfWeek() );
 
         // Now put it all together
         // Panels
@@ -280,14 +275,14 @@ public class View extends JFrame implements ActionListener
                                                           "5[grow]5",
                                                           "0[20][][300, grow][]0" ) );
 
-        topPanel = new JPanel( new MigLayout( "", "[]0[][][]", "[]" ) );
+        JPanel topPanel = new JPanel( new MigLayout( "", "[]0[][][]", "[]" ) );
         topPanel.add( iconLabel, "" );
         topPanel.add( dayBackButton, "" );
         topPanel.add( dateLabel, "grow" );
         topPanel.add( dayForwardButton, "" );
         topPanel.setBackground( new Color( 85, 91, 106 ) );
 
-        dataEntryPanel = new JPanel( new MigLayout( "",
+        JPanel dataEntryPanel = new JPanel( new MigLayout( "",
                                                     "10[]20[]20[]20[]10[grow]10", 
                                                     "2[][grow]2" ) );
         dataEntryPanel.add( startStopButton );
@@ -299,20 +294,17 @@ public class View extends JFrame implements ActionListener
         dataEntryPanel.add( descriptionTextArea, "span 5, grow, hmax 100" );
         dataEntryPanel.setBackground( new Color( 115, 121, 136 ) );
         TitledBorder border = BorderFactory.createTitledBorder( null, 
-                "Task Details", 
-                TitledBorder.LEFT, 
-                TitledBorder.TOP, 
-                new Font( "Lucida Grande", 1, 12 ), 
-                Color.WHITE );
+                                                                "Task Details", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
         dataEntryPanel.setBorder( border );
 
         bottomPanel = new JPanel( new MigLayout( "",
-                                                 "10[]20[]20[grow]10[]20[]20[]20[]20",
+                                                 "20[grow]10[]20[]20[]20[]20",
                                                  "2[]0[]10" ) );
-        bottomPanel.add( new JLabel("<html><div color='white'>Week:</div>") );
-        bottomPanel.add( new JLabel("<html><div color='white'>Day:</div>"), "wrap" );
-        bottomPanel.add( weekValueLabel );
-        bottomPanel.add( dayValueLabel );
+
         bottomPanel.add( weekProgressBar, "grow, hmax 28" );
         bottomPanel.add( beerLabel );
         bottomPanel.add( reportButton );
@@ -444,26 +436,44 @@ public class View extends JFrame implements ActionListener
 	 */
 	public void setJiraComboBox( ArrayList<String[]> issues )
     {
-        String[][] jiraData = new String[2][issues.size()];
-
-        int i = 0;
-        for ( String[] entries : issues )
-        {
-            jiraData[0][i] = entries[0];
-            jiraData[1][i] = entries[2];
-            i++;
-        }
-
-        jiraComboBox = new ComboBoxPopup( jiraData[0], jiraData[1] );
-        jiraComboBox.setPreferredSize( new Dimension( 300, 28 ) );
+		if( issues != null )
+		{
+            String[][] jiraData = new String[2][issues.size()];
+    
+            int i = 0;
+            for ( String[] entries : issues )
+            {
+                jiraData[0][i] = entries[0];
+                jiraData[1][i] = entries[2];
+                i++;
+            }
+    
+            jiraComboBox = new ComboBoxPopup( jiraData[0], jiraData[1] );
+		}
+		else
+			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
+		
+        jiraComboBox.setPreferredSize( new Dimension(150, 28) );
+        
 //		view.enableJIRAPanel( true );
 //		view.getJiraComboBox().setModel( result.getModel() );
 //		usingJIRA = true;
     }   
     
+    /**
+     * Used to flash the Beer O' Clock label.
+     */
+    public void beerAlarm()
+    {
+        System.out.println( "Beer O' Clock!" );
+        beerLabel.setText( "<html><div font color='white'>" + "Beer O' Clock!" + "</div></html>" );
+        beerLabel.setEnabled( !beerLabel.isEnabled() );
+    }
     
-    
-    
+    public void setDate( String date )
+    {
+        dateLabel.setText( date );
+    }
     
     
     
@@ -496,10 +506,6 @@ public class View extends JFrame implements ActionListener
             {
 //                dayForwardButtonActionPerformed();
             }
-            else if( e.getSource() == startStopButton )
-            {
-//                startStopButtonActionPerformed( e );
-            }
             else if( e.getSource() == notWorkRadioButton )
             {
 //                notWorkRadioButtonActionPerformed( e );
@@ -521,7 +527,7 @@ public class View extends JFrame implements ActionListener
 
         }
         if( e.getSource() instanceof JMenuItem )
-        {System.out.println( "Item clicked: " + e.getActionCommand() );
+        {
             if( e.getActionCommand().equalsIgnoreCase( "preferences" ) )
                 System.out.println( "Item clicked: " + e.getActionCommand() );
             else if( e.getActionCommand().equalsIgnoreCase( "quit" ) )
@@ -539,7 +545,17 @@ public class View extends JFrame implements ActionListener
 //                System.out.println( "Item clicked: " + e.getActionCommand() );
                 new Splash( this );
         }
+        
+        if( e.getSource() instanceof JToggleButton )
+        {
+        	System.out.println("startStop");
+        	if( startStopButton.isSelected() )
+        		controller.startRecording();
+        	else
+        		controller.stopRecording();
+        }
     }
+
     
     
     
@@ -547,10 +563,57 @@ public class View extends JFrame implements ActionListener
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
-    public void setDate( String date )
-    {
-        dateLabel.setText( date );
-    }
+	public ComboBoxPopup getJiraComboBox()
+	{
+		return jiraComboBox;
+	}
+
+	public void setJiraComboBox( ComboBoxPopup jiraComboBox )
+	{
+		this.jiraComboBox = jiraComboBox;
+	}
+
+	public JRadioButton getNotJiraRadioButton()
+	{
+		return notJiraRadioButton;
+	}
+
+	public void setNotJiraRadioButton( JRadioButton notJiraRadioButton )
+	{
+		this.notJiraRadioButton = notJiraRadioButton;
+	}
+
+	public JRadioButton getNotWorkRadioButton()
+	{
+		return notWorkRadioButton;
+	}
+
+	public void setNotWorkRadioButton( JRadioButton notWorkRadioButton )
+	{
+		this.notWorkRadioButton = notWorkRadioButton;
+	}
+
+	public JTextArea getDescriptionTextArea()
+	{
+		return descriptionTextArea;
+	}
+
+	public void setDescriptionTextArea( JTextArea descriptionTextArea )
+	{
+		this.descriptionTextArea = descriptionTextArea;
+	}
+
+	public JPanel getBottomPanel()
+	{
+		return bottomPanel;
+	}
+
+	public void setBottomPanel( JPanel bottomPanel )
+	{
+		this.bottomPanel = bottomPanel;
+	}
+	
+	
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------

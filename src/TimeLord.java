@@ -75,7 +75,14 @@ public class TimeLord
         // -splash:/Users/mullsy/Documents/workspace/TimeLord/src/media/splash.png
         // This will display a splash screen as the JVM starts and connections are made to Jira.
         // The main TimeLord window will then be displayed.
-        new Splash( view );
+        try
+        {
+        	new Splash( view );
+        }
+    	catch ( java.lang.IllegalStateException e )
+    	{
+    		// If this happens, it's too late to do anything about it so ignore.
+    	}
 
         String osName = System.getProperty( "os.name" );
         if ( osName.toLowerCase().contains( "mac" ) )
