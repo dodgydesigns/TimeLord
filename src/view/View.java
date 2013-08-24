@@ -36,8 +36,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
@@ -62,11 +60,13 @@ import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import net.miginfocom.swing.MigLayout;
 
 import org.joda.time.DateTime;
 
+import widgets.BareBonesBrowserLaunch;
 import widgets.ColourCellRenderer;
 import widgets.ComboBoxPopup;
 import widgets.LimitedLinesDocument;
@@ -79,7 +79,7 @@ public class View extends JFrame implements ActionListener
     //                    STATIC VARIABLES
     //----------------------------------------------------------
     private static final long serialVersionUID = -3317570506856865808L;
-    public static final int DESCRIPTION_COL_WIDTH = 246;
+    public static final int DESCRIPTION_COL_WIDTH = 299;
 
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
@@ -102,6 +102,8 @@ public class View extends JFrame implements ActionListener
     private Controller controller;
 	private JLabel beerLabel;
 	private JPanel bottomPanel;
+	private JLabel timeLabel;
+	private JButton clearDescriptionButton;
     
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -145,7 +147,7 @@ public class View extends JFrame implements ActionListener
         dateLabel.setFont( new Font( "Lucida Grande", 1, 20 ) );
         dateLabel.setHorizontalAlignment( SwingConstants.CENTER );
 
-        JLabel timeLabel = new JLabel();
+        timeLabel = new JLabel();
         timeLabel.setFont( new Font( "Lucida Grande", 1, 36 ) );
 
         JLabel taskIconLabel = new JLabel( "JIRA:" );
@@ -214,6 +216,11 @@ public class View extends JFrame implements ActionListener
         reportButton.setBorder( null );
         reportButton.addActionListener( this );
 
+        clearDescriptionButton = new JButton("X");
+        clearDescriptionButton.setForeground( Color.WHITE );
+        clearDescriptionButton.setBorder( null );
+        clearDescriptionButton.addActionListener( this );
+
         // TextArea
         // Limit the maximum number of characters able to be entered to 97.
         LimitedLinesDocument textAreaDocument = new LimitedLinesDocument( 1, 97 );
@@ -221,14 +228,6 @@ public class View extends JFrame implements ActionListener
         descriptionTextArea.setDocument( textAreaDocument );
         descriptionTextArea.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
         descriptionTextArea.setForeground( Color.LIGHT_GRAY );
-        addWindowListener( new WindowAdapter()
-        {
-            public void windowOpened( WindowEvent e )
-            {
-                descriptionTextArea.requestFocus();
-                descriptionTextArea.setCaretPosition( 0 );
-            }
-        } );
         
         descriptionTextArea.setText( "Enter task description..." );
         descriptionTextArea.setBackground( new Color(125, 131, 146) );
@@ -241,7 +240,7 @@ public class View extends JFrame implements ActionListener
                 if ( !startStopButton.isEnabled() )
                 {
                     descriptionTextArea.setText( "" );
-                    descriptionTextArea.setForeground( Color.BLACK );
+                    descriptionTextArea.setForeground( Color.WHITE );
                 }
                 startStopButton.setEnabled( true );
             }
@@ -256,9 +255,6 @@ public class View extends JFrame implements ActionListener
             {
             }
         } );
-
-        // descriptionScrollPane = new JScrollPane();
-        // descriptionScrollPane.setViewportView(descriptionTextArea);
 
         // Table
         drawTaskTable();
@@ -283,15 +279,17 @@ public class View extends JFrame implements ActionListener
         topPanel.setBackground( new Color( 85, 91, 106 ) );
 
         JPanel dataEntryPanel = new JPanel( new MigLayout( "",
-                                                    "10[]20[]20[]20[]10[grow]10", 
+                                                  //start clock radiobut combo       
+                                                    "10[]20[200]150    []20    []10[grow][]", 
                                                     "2[][grow]2" ) );
         dataEntryPanel.add( startStopButton );
-        dataEntryPanel.add( timeLabel, "aligny 45%, hmax 28" );
+        dataEntryPanel.add( timeLabel, "aligny 45%, hmax 30" );
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
         dataEntryPanel.add( notJiraRadioButton );
         dataEntryPanel.add( taskIconLabel );
         dataEntryPanel.add( jiraComboBox, "wrap, hmax 28" );
         dataEntryPanel.add( descriptionTextArea, "span 5, grow, hmax 100" );
+        dataEntryPanel.add( clearDescriptionButton, "hmax 100" );
         dataEntryPanel.setBackground( new Color( 115, 121, 136 ) );
         TitledBorder border = BorderFactory.createTitledBorder( null, 
                                                                 "Task Details", 
@@ -320,6 +318,8 @@ public class View extends JFrame implements ActionListener
         add( mainContainer );
         pack();
         setLocationRelativeTo( null );
+        descriptionTextArea.requestFocus();
+        descriptionTextArea.setCaretPosition( 0 );
     }
 
     /**
@@ -388,7 +388,8 @@ public class View extends JFrame implements ActionListener
         taskTableHeader.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
         taskTableHeader.setBackground( new Color( 85, 91, 106 ) );
         taskTableHeader.setForeground( Color.WHITE );
-
+//        taskTableHeader.setAlignmentY( CENTER_ALIGNMENT );
+        
         // Disable auto resizing
         taskTable.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
 
@@ -402,31 +403,30 @@ public class View extends JFrame implements ActionListener
      */
     protected void setupColumns()
     {
+    	TableColumnModel colModel = taskTable.getColumnModel();
         // Start
-        TableColumn col0 = taskTable.getColumnModel().getColumn( 0 );
+        TableColumn col0 = colModel.getColumn( 0 );
         col0.setPreferredWidth( 70 );
-        col0.setCellRenderer( new ColourCellRenderer( Color.WHITE, new Color(
-                10, 150, 10 ) ) );
+        col0.setCellRenderer( new ColourCellRenderer( Color.WHITE, new Color( 10, 150, 10 ) ) );
 
         // Stop
-        TableColumn col1 = taskTable.getColumnModel().getColumn( 1 );
+        TableColumn col1 = colModel.getColumn( 1 );
         col1.setPreferredWidth( 70 );
-        col1.setCellRenderer( new ColourCellRenderer( Color.WHITE, new Color(
-                150, 10, 10 ) ) );
+        col1.setCellRenderer( new ColourCellRenderer( Color.WHITE, new Color( 150, 10, 10 ) ) );
 
         // Delta
-        TableColumn col2 = taskTable.getColumnModel().getColumn( 2 );
+        TableColumn col2 = colModel.getColumn( 2 );
         col2.setMinWidth( 105 );
         col2.setPreferredWidth( 110 );
         col2.setCellRenderer( new ColourCellRenderer( Color.WHITE, Color.BLACK ) );
 
         // JIRA
-        TableColumn col3 = taskTable.getColumnModel().getColumn( 3 );
+        TableColumn col3 = colModel.getColumn( 3 );
         col3.setPreferredWidth( 90 );
         col3.setCellRenderer( new ColourCellRenderer( Color.WHITE, Color.BLUE ) );
 
         // Description
-        final TableColumn col4 = taskTable.getColumnModel().getColumn( 4 );
+        final TableColumn col4 = colModel.getColumn( 4 );
         col4.setPreferredWidth( DESCRIPTION_COL_WIDTH );
         col4.setCellRenderer( new MultiLineCellRenderer() );
     }
@@ -474,59 +474,60 @@ public class View extends JFrame implements ActionListener
     {
         dateLabel.setText( date );
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+   
     /**
      * Grab all the GUI events and handle them appropriately.
      */
     @Override
     public void actionPerformed( ActionEvent e )
     {        
+    	Object source = e.getSource();
+    	
         if( e.getSource() instanceof JButton )
         {   
-            if( e.getSource() == reportButton )
+            if( source == reportButton )
             {
 //                new Report( this ).setVisible( true );
             }
-            else if( e.getSource() == dayBackButton )
+            else if( source == dayBackButton )
             {
 //                dayBackButtonActionPerformed( e );
             }
-            else if( e.getSource() == dayForwardButton )
+            else if( source == dayForwardButton )
             {
 //                dayForwardButtonActionPerformed();
             }
-            else if( e.getSource() == notWorkRadioButton )
+            else if( source == notWorkRadioButton )
             {
 //                notWorkRadioButtonActionPerformed( e );
             }
-            else if( e.getSource() == notJiraRadioButton )
+            else if( source == notJiraRadioButton )
             {
 //                notJiraRadioButtonActionPerformed( e );
             }
-            else if( e.getSource() == quitButton )
+            else if( source == clearDescriptionButton )
             {
-//                quitButtonActionPerformed();
+            	descriptionTextArea.setText( "" );
+            	descriptionTextArea.setCaretPosition( 0 );
+            	descriptionTextArea.requestFocus();
             }
-            else if( e.getSource() == configButton )
+            else if( source == quitButton )
+            {
+                if ( controller.isRecording() )
+                {
+                    controller.stopRecording();
+                }
+                System.exit( 0 );
+            }
+            else if( source == configButton )
             {
             	Semaphore semaphore = new Semaphore( 1 );
                 JDialog configDialog = new Configuration( controller, semaphore );
                 configDialog.setVisible( true );
             }
-
         }
-        if( e.getSource() instanceof JMenuItem )
+        
+        if( source instanceof JMenuItem )
         {
             if( e.getActionCommand().equalsIgnoreCase( "preferences" ) )
                 System.out.println( "Item clicked: " + e.getActionCommand() );
@@ -538,9 +539,9 @@ public class View extends JFrame implements ActionListener
             else if( e.getActionCommand().equalsIgnoreCase( "by week..." ) )
                 System.out.println( "Item clicked: " + e.getActionCommand() );
             else if( e.getActionCommand().equalsIgnoreCase( "timelord help" ) )
-                System.out.println( "Item clicked: " + e.getActionCommand() );
-//                BareBonesBrowserLaunch.openURL( getClass().getResource(
-//                        "/media/help/Welcome to Time.htm" ).toString() );
+//                System.out.println( "Item clicked: " + e.getActionCommand() );
+                BareBonesBrowserLaunch.openURL( getClass().getResource(
+                        "/media/help/Welcome to Time.htm" ).toString() );
             else if( e.getActionCommand().equalsIgnoreCase( "About Time:Lord" ) )
 //                System.out.println( "Item clicked: " + e.getActionCommand() );
                 new Splash( this );
@@ -548,18 +549,17 @@ public class View extends JFrame implements ActionListener
         
         if( e.getSource() instanceof JToggleButton )
         {
-        	System.out.println("startStop");
-        	if( startStopButton.isSelected() )
-        		controller.startRecording();
-        	else
-        		controller.stopRecording();
+        	if( !e.getActionCommand().toLowerCase().equals("not jira") &&
+        		!e.getActionCommand().toLowerCase().equals("not work") )
+        	{
+            	if( startStopButton.isSelected() )
+            		controller.startRecording();
+            	else
+            		controller.stopRecording();
+        	}
         }
     }
 
-    
-    
-    
-    
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -612,8 +612,22 @@ public class View extends JFrame implements ActionListener
 	{
 		this.bottomPanel = bottomPanel;
 	}
-	
-	
+
+	public JLabel getTimeLabel()
+	{
+		return timeLabel;
+	}
+
+	public void setTimeLabel( JLabel timeLabel )
+	{
+		this.timeLabel = timeLabel;
+	}
+
+	public JTable getTaskTable()
+	{
+		return taskTable;
+	}
+
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------

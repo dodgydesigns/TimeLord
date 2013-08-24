@@ -36,11 +36,11 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 import model.JiraInterface;
 import model.Preferences;
 import model.SqlInterface;
-import model.TaskTableModel;
 import model.Time;
 
 import org.apache.xmlrpc.XmlRpcException;
@@ -62,7 +62,7 @@ public class Controller
     //----------------------------------------------------------
     private View view;
     private SqlInterface database;
-    private TaskTableModel taskTableModel;
+    private DefaultTableModel taskTableModel;
     private Preferences preferences;
     private JiraInterface jiraInterface;
     
@@ -71,7 +71,6 @@ public class Controller
 	private DateTime currentStartTime;
 	private Period dayTally;
 	protected JLabel dayTallyValueLabel;
-	private Period weekTally;
 
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -94,7 +93,6 @@ public class Controller
         // Handle preferences
         preferences = new Preferences();
         jiraInterface = new JiraInterface( this );
-        taskTableModel = new TaskTableModel( database );
 
         startupTimeLord();
     }
@@ -120,12 +118,27 @@ public class Controller
             }
             catch( InterruptedException e1 )
             {
-    	        // TODO Auto-generated catch block
     	        e1.printStackTrace();
             }
             JDialog configDialog = new Configuration( this, semaphore );
             
             configDialog.setVisible( true );
+        }
+        
+        try
+        {
+        	String[][] todaysEntries = getDatabase().getTodaysEntries();
+        	taskCount = todaysEntries.length;
+	        taskTableModel =  new DefaultTableModel( todaysEntries, 
+	                                                 new String[] { "Start", 
+	                                                                "Stop", 
+	                                                                "Delta", 
+	                                                                "JIRA", 
+	                                                       			"Description" } );
+        }
+        catch( SQLException e )
+        {
+	        e.printStackTrace();
         }
      
         // Start drawing the GUI
@@ -137,6 +150,7 @@ public class Controller
 		setDateLabel();
 		
         // Set the tally for today on the dayTallyLabel
+		dayTally = database.getTodayTally();
         view.getBottomPanel().setBorder( createTallyBorder() );
         
 		SwingUtilities.invokeLater( new Runnable()
@@ -152,7 +166,7 @@ public class Controller
     
     /**
      * Set current date for the date label and time for the time label.  
-     * This is updated every minute to ensure the values are kept current.
+     * This is updated every second to ensure the values are kept current.
      * 
      * If the clock reaches Friday 4pm, the beer alarm goes off.
      * 
@@ -173,18 +187,38 @@ public class Controller
 				String hours = (String)(dateTime.getHourOfDay() < 10 ? "0" + dateTime.getHourOfDay()
 					                                                 : String.valueOf(dateTime.getHourOfDay()) );
 				
-				view.setDate( "<html>" + "<div align='center' font color='white'>" +
-				              "<font size='20'>" + hours + ":" +
-				              minutes + "</font>" + "<br>" + "<font size='3'>" +
-				              dayOfWeek.getAsText() + " " + dateTime.getDayOfMonth() + "/" +
+				// Set date label
+				view.setDate( "<html><div align='center' font color='white'>" + 
+							  "<font size='6'>" +
+				              dayOfWeek.getAsText() + 
+				              "</font>" +
+				              "<br>" + 
+							  "<font size='4'>" +
+				              dateTime.getDayOfMonth() + 
+				              "/" +
 				              dateTime.getMonthOfYear() +
-				              "</font>" + "</div>" + "</html>" );
-			
+				              "</font></div></html>" );
+				
+				// Set clock with a blinking ':'.
+				String colonText = "";
+				if( dateTime.getSecondOfMinute() % 2 == 0 )
+					colonText = "<font color='gray'>";
+				else
+					colonText = "<font color='white'>";
+		
+				view.getTimeLabel().setText( "<html><div align='center' font color='white'>" +
+				              				 "<font size='50'>" + 
+				              				 hours + 
+				              				 colonText +
+				              				 ":" +
+				              				 "</font>" +
+				              				 minutes + 
+				              				 "</font></div></html>" );
 				setBeerAlarm( dateTime );
 			}
 		};
 		Timer timer = new Timer();
-		timer.scheduleAtFixedRate( dateUpdater, 0, 10 * 1000 );
+		timer.scheduleAtFixedRate( dateUpdater, 0, 1000 );
 	}
 
     /**
@@ -255,7 +289,6 @@ public class Controller
             }
             catch( XmlRpcException e )
             {
-    	        // TODO Auto-generated catch block
     	        e.printStackTrace();
             }
         }
@@ -286,7 +319,6 @@ public class Controller
             }
             catch( XmlRpcException e )
             {
-	            // TODO Auto-generated catch block
 	            e.printStackTrace();
             }
         }
@@ -314,20 +346,15 @@ public class Controller
      * JIRA task and description are recorded in the database and the task
      * table. If either the notJira or notWork buttons are pressed, 'N/A' is
      * entered for the task reference.
-     * 
-     * @param table - task table showing today's task statistics.
-     * @param date - today's date (for the db entry).
-     * @param time - start time.
-     * @param jira - JIRA reference.
-     * @param description - task description.
-     * @param notWork - if the notWork button is pressed.
-     * @param notJira - if the notJira button is pressed.
      */
     public void startRecording()
     {
         currentStartTime = new DateTime();
 
         String jiraKey = (String)view.getJiraComboBox().getSelectedItem();
+        if ( view.getNotWorkRadioButton().isSelected() || view.getNotJiraRadioButton().isSelected() )
+        	jiraKey = "N/A";
+        
         String workDescription = view.getDescriptionTextArea().getText();
         
         final Object[] data = { Time.getFormattedTime( new DateTime() ), 
@@ -342,37 +369,19 @@ public class Controller
 
             public void run()
             {
-                getTaskTableModel().addRow( data );
+                taskTableModel.addRow( data );
             }
         } );
 
-        if ( view.getNotWorkRadioButton().isSelected() || 
-        	 view.getNotJiraRadioButton().isSelected() )
-        {
-        	jiraKey = "N/A";
-            final int count = taskCount;
-
-            // Add to Event Dispatch Thread to avoid blocking the GUI
-            SwingUtilities.invokeLater( new Runnable()
-            {
-
-                public void run()
-                {
-                	getTaskTableModel().setValueAt( new JLabel( "N/A" ), count, 3 );
-                }
-            } );
-        }
-
         try
         {
-            database.setStartParameters( Time.getReferableDate( new DateTime() ),
+            database.setStartParameters( Time.getReferableDate( currentStartTime ),
                                          currentStartTime, 
                                          jiraKey, 
                                          workDescription );
         }
         catch ( SQLException e )
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -401,19 +410,22 @@ public class Controller
 
         dayTally = new Period( dayTally ).plus( new Period( delta ) );
 
-        // Set the time taken for this task. Add to Event Dispatch Thread to
-        // avoid blocking the GUI
+        // Set the time taken for this task.
         SwingUtilities.invokeLater( new Runnable()
         {
             public void run()
             {
                 // Set the stop time on the table
-                getTaskTableModel().setValueAt( Time.getFormattedTime( currentStopTime ),
-                                                taskCount, 1 );
-                // Set the delta time on the table
-                getTaskTableModel().setValueAt( Time.displayDelta( delta ),
-                                                taskCount, 2 );
-                
+            	taskTableModel.setValueAt( Time.getFormattedTime( currentStopTime ),
+                                                taskCount - 1, 
+                                                1 );
+            	
+                // Set the delta time on the table                
+            	taskTableModel.setValueAt( Time.displayDelta( delta ),
+                                                taskCount - 1, 
+                                                2 );
+            	view.getTaskTable().invalidate();
+            	
                 // Set the tally for today on the dayTallyLabel
                 view.getBottomPanel().setBorder( createTallyBorder() );
             }
@@ -425,13 +437,25 @@ public class Controller
         }
         catch ( SQLException e )
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         recording = false;
     }
 
+    /**
+     * Read the database to determine how many hours:minutes that have been
+     * complete on the current day.
+     * 
+     * @return String - total amount of time worked on the current day.
+     */
+    public String calculateDayTally()
+    {
+        Period tally = database.getTodayTally();
+
+        return Time.displayDelta( tally );
+    }
+    
     /**
      * Read the database to determine how many hours:minutes that have been
      * complete on the current day.
@@ -456,7 +480,8 @@ public class Controller
     private TitledBorder createTallyBorder()
     {   
         TitledBorder border = BorderFactory.createTitledBorder( null, 
-                                                                "Week: " + calculateWeekTally() + 
+                                                                "Week: " 
+                                                                + calculateWeekTally() + 
                                                                 "   Day: " + 
                                                                 Time.displayDelta( dayTally ), 
                                                                 TitledBorder.LEFT, 
@@ -473,13 +498,14 @@ public class Controller
     {
         return database;
     }
-    
     /**
+     * The number of tasks listed in the table.
+     * 
      * @return
      */
-    public DefaultTableModel getTaskTableModel()
+    public void setTaskCount( int count )
     {
-        return taskTableModel;
+        taskCount = count;
     }
     
     public Preferences getPreferences()
@@ -487,7 +513,7 @@ public class Controller
         return preferences;
     }
 
-    public Frame getView()
+    public View getView()
     {
         return view;
     }
@@ -496,8 +522,31 @@ public class Controller
     {
         return jiraInterface;
     }
+    
+	public TableModel getTaskTableModel()
+    {
+	    return taskTableModel;
+    }
+	public void setTaskTableModel( DefaultTableModel newModel )
+    {
+	    taskTableModel = newModel;
+    }
+	
+	public boolean isRecording()
+	{
+		return recording;
+	}
+
+	public void setRecording( boolean recording )
+	{
+		this.recording = recording;
+	}
+	
+	
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------
+
+
 
 }

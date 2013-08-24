@@ -200,6 +200,12 @@ public class SqlInterface
 
         return rs;
     }
+    
+    public String[][] getTodaysEntries() throws SQLException
+    {
+    	String todayDate = Time.getReferableDate( new DateTime() );
+    	return getEntriesByDate( todayDate );
+    }
 
     /**
      * Return all entries filtered by the date of interest.
@@ -210,23 +216,23 @@ public class SqlInterface
      * 
      * @throws SQLException
      */
-    public String[][] getTodaysEntries( String date ) throws SQLException
+    public String[][] getEntriesByDate( String date ) throws SQLException
     {
         taskCount = 0;
 
         ResultSet rs = statementHandler.executeQuery( "select * from timelord where date = '"
                 + date + "';" );
 
+        int tmpCounter = 0;
         while ( rs.next() )
         {
-            taskCount++;
+        	tmpCounter++;
         }
 
-        String[][] tableData = new String[taskCount][5];
+        String[][] tableData = new String[tmpCounter][5];
 
-        taskCount = 0;
-        rs = statementHandler.executeQuery( "select * from timelord where date = '"
-                + date + "';" );
+        rs = statementHandler.executeQuery( "select * from timelord where date = '" + date + "';" );
+        
         while ( rs.next() )
         {
             DateTime start = new DateTime( rs.getObject("start") );
@@ -314,11 +320,22 @@ public class SqlInterface
      * Keep a running total of the time spent on tasks today. This can also then
      * be used to calculate the time spent on tasks this week.
      * 
+     * @return The total time spent on tasks today.
+     */
+    public Period getTodayTally()
+    {
+    	return getTallyForDate( new DateTime() );
+    }
+    
+    /**
+     * Keep a running total of the time spent on tasks on a specific date. 
+     * This can also then be used to calculate the time spent on tasks this week.
+     * 
      * @param date Today's date
      * 
      * @return The total time spent on tasks today.
      */
-    public Period getTodayTally( DateTime date )
+    public Period getTallyForDate( DateTime date )
     {
         Period tally = new Period();
         ResultSet rs;

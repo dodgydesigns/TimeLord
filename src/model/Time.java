@@ -19,7 +19,7 @@ public class Time
 	 */
 	public static String getFormattedTime( DateTime dateTime )
 	{
-		String minutes = String.valueOf( dateTime.getMinuteOfHour() + 1 );
+		String minutes = String.valueOf( dateTime.getMinuteOfHour() );
 		if( minutes.equals( "60" ) )
 		{
 			minutes = "00";

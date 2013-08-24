@@ -20,6 +20,8 @@
 package view;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -39,6 +41,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
 
 import model.JiraInterface;
 import model.Preferences;
@@ -78,7 +82,7 @@ public class Configuration extends JDialog implements ActionListener
     private JCheckBox connectToJira;
     private JLabel tryJIRASettingsLabel;
     
-    private JFrame view;
+    private view.View view;
     private Preferences preferences;
     private SqlInterface database;
 
@@ -95,7 +99,7 @@ public class Configuration extends JDialog implements ActionListener
         super( controller.getView() );
         
         this.semaphore = semaphore;
-        this.view = (JFrame) controller.getView();
+        this.view = controller.getView();
         this.preferences = controller.getPreferences();
         this.database = controller.getDatabase();
         this.jiraInterface = controller.getJiraInterface();
@@ -125,27 +129,39 @@ public class Configuration extends JDialog implements ActionListener
      */
     private void initComponents()
     {
-        setBackground( new Color( 255, 255, 255 ) );
+    	// Hide the main window to reduce clutter
+        view.setVisible( false );
+        
+        setBackground( new Color( 115, 121, 136 ) );
         setLayout( new MigLayout("", "[][grow]", "[][shrink 0]") );
     	setModal( true );
-        getContentPane().setBackground( Color.WHITE );
+        getContentPane().setBackground( Color.LIGHT_GRAY );
 
         // Panels
         JPanel jiraPanel = new JPanel( new MigLayout( "", "[][grow]", "[shrink 0][shrink 0]" ) );
-        jiraPanel.setBorder( BorderFactory.createTitledBorder( "JIRA" ) );
-        jiraPanel.setBackground( new java.awt.Color( 245, 245, 255 ) );
+        TitledBorder border = BorderFactory.createTitledBorder( null, 
+                                                                "Jira", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        jiraPanel.setBorder( border );
+        jiraPanel.setBackground( new Color( 115, 121, 136 ) );
         
         JPanel databasePanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
-        databasePanel.setBorder( BorderFactory.createTitledBorder( "Database" ) );
-        databasePanel.setBackground( new java.awt.Color( 245, 245, 255 ) );
+        border = BorderFactory.createTitledBorder( null, 
+                                                   "Database", 
+                                                   TitledBorder.LEFT, 
+                                                   TitledBorder.TOP, 
+                                                   new Font( "Lucida Grande", 1, 12 ), 
+                                                   Color.WHITE );
+        databasePanel.setBorder( border );
+        databasePanel.setBackground( new Color( 115, 121, 136 ) );
 
         // Labels
-		JLabel logoLabel =
-		    new JLabel(
-		                new javax.swing.ImageIcon(
-		                                           getClass().getResource(
-		                                                                   "/media/timelord logo.png" ) ) );
-		tryJIRASettingsLabel = new JLabel( "Try to connect using current settings:" );
+		JLabel logoLabel = new JLabel( new javax.swing.ImageIcon( getClass().getResource( "/media/" +
+																						  "timelord logo.png" ) ) );
+		tryJIRASettingsLabel = new JLabel( "<html><font color='white'>Try to connect using current settings:" );
 		logoLabel.setBackground( Color.WHITE );
 		logoLabel.setOpaque( true );
 
@@ -185,24 +201,25 @@ public class Configuration extends JDialog implements ActionListener
         add( databasePanel, "wrap 15, span, grow" );
 
         jiraPanel.add( connectToJira );
-        jiraPanel.add( new JLabel( "Connect to Jira at startup" ), "wrap, span, grow" );
-        jiraPanel.add( new JLabel( "JIRA URL:" ) );
+        jiraPanel.add( new JLabel( "<html><font color='white'>Connect to Jira at startup</font>" ), 
+                       "wrap, span, grow" );
+        jiraPanel.add( new JLabel( "<html><font color='white'>Jira URL:</font>" ) );
         jiraPanel.add( urlTextField, "wrap, span, grow" );
-        jiraPanel.add( new JLabel( "Username:" ) );
+        jiraPanel.add( new JLabel( "<html><font color='white'>Username:</font>" ) );
         jiraPanel.add( usernaneTextField, "wrap, span, grow" );
-        jiraPanel.add( new JLabel( "Password:" ) );
+        jiraPanel.add( new JLabel( "<html><font color='white'>Password:</font>" ) );
         jiraPanel.add( passwordPasswordField, "wrap, span, grow" );
-        jiraPanel.add( new JLabel( "Project:" ) );
+        jiraPanel.add( new JLabel( "<html><font color='white'>Project:</font>" ) );
         jiraPanel.add( projectCombo, "wrap 15, span, grow" );
 
         jiraPanel.add( tryJIRASettingsLabel, "span 2" );
         jiraPanel.add( tryButton, "right, width 80:80:80" );
 
-        databasePanel.add( new JLabel( "Clear DB:" ) );
+        databasePanel.add( new JLabel( "<html><font color='white'>Clear DB:</font>" ) );
         databasePanel.add( clearDBButton, "gapleft 30, width 80:80:80, wrap" );
-        databasePanel.add( new JLabel( "Backup DB:" ) );
+        databasePanel.add( new JLabel( "<html><font color='white'>Backup DB:</font>" ) );
         databasePanel.add( backupDBButton, "gapleft 30, width 80:80:80, wrap" );
-        databasePanel.add( new JLabel( "Restore DB:" ) );
+        databasePanel.add( new JLabel( "<html><font color='white'>Restore DB:</font>" ) );
         databasePanel.add( restroreDBButton, "gapleft 30, width 80:80:80," );
 
         add( cancelButton, "right, width 80:80:80," );
@@ -231,10 +248,8 @@ public class Configuration extends JDialog implements ActionListener
             projects.putAll( jiraInterface.getProjectsKeyName() );
             preferences.setProjects( projects );
 
-			DefaultComboBoxModel<String> model =
-			    new DefaultComboBoxModel<String>(
-			                                      projects.values().toArray(
-			                                                                 new String[projects.size()] ) );
+            String[] projectsNames = projects.values().toArray( new String[projects.size()] );
+			DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>( projectsNames );
             projectCombo.setModel( model );
         }
         else
@@ -256,6 +271,8 @@ public class Configuration extends JDialog implements ActionListener
         	try
             {
 	            database.dropDataBase();
+	            database.createTimeLordDB();
+	            view.getTaskTable().setModel( new DefaultTableModel() );
             }
             catch( SQLException e )
             {
@@ -322,12 +339,16 @@ public class Configuration extends JDialog implements ActionListener
                 preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
                 semaphore.release();
                 dispose();
+            	// Show the main window again
+                view.setVisible( true );
             }
             if( buttonText.toLowerCase().equals( "cancel" ) )
             {
                 // TODO: undo any changes
             	semaphore.release();
-                dispose();            
+                dispose();   
+            	// Show the main window again
+                view.setVisible( true );
             }
         }
 		else if( source instanceof JCheckBox )
