@@ -240,8 +240,11 @@ public class Preferences implements Serializable
     @SuppressWarnings("unchecked")
     public Map<String,String> getProjects()
     {
-        return (Map<String,String>)preferences.get( JIRA_PROJECTS );
-    }
+    	HashMap<String, String> convertedMap = new HashMap<String, String>();
+    	convertedMap.putAll( (Map<? extends String, ? extends Object>) preferences.get( JIRA_PROJECTS ) );
+    	
+    	return convertedMap;
+    }S
     
     /**
      * @param The project the user is logging time against.

@@ -36,6 +36,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
@@ -79,7 +80,7 @@ public class View extends JFrame implements ActionListener
     //                    STATIC VARIABLES
     //----------------------------------------------------------
     private static final long serialVersionUID = -3317570506856865808L;
-    public static final int DESCRIPTION_COL_WIDTH = 299;
+    public static final int DESCRIPTION_COL_WIDTH = 314;
 
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
@@ -222,40 +223,8 @@ public class View extends JFrame implements ActionListener
         clearDescriptionButton.addActionListener( this );
 
         // TextArea
-        // Limit the maximum number of characters able to be entered to 97.
-        LimitedLinesDocument textAreaDocument = new LimitedLinesDocument( 1, 97 );
-        descriptionTextArea = new JTextArea();
-        descriptionTextArea.setDocument( textAreaDocument );
-        descriptionTextArea.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
-        descriptionTextArea.setForeground( Color.LIGHT_GRAY );
+        setupDescriptionTextArea();
         
-        descriptionTextArea.setText( "Enter task description..." );
-        descriptionTextArea.setBackground( new Color(125, 131, 146) );
-        descriptionTextArea.addKeyListener( new KeyListener()
-        {
-
-            @Override
-            public void keyTyped( KeyEvent e )
-            {
-                if ( !startStopButton.isEnabled() )
-                {
-                    descriptionTextArea.setText( "" );
-                    descriptionTextArea.setForeground( Color.WHITE );
-                }
-                startStopButton.setEnabled( true );
-            }
-
-            @Override
-            public void keyReleased( KeyEvent e )
-            {
-            }
-
-            @Override
-            public void keyPressed( KeyEvent arg0 )
-            {
-            }
-        } );
-
         // Table
         drawTaskTable();
 
@@ -322,7 +291,7 @@ public class View extends JFrame implements ActionListener
         descriptionTextArea.setCaretPosition( 0 );
     }
 
-    /**
+	/**
      * Create all the menu headings and menu items available for TimeLord.
      */
     private void drawMenu()
@@ -461,13 +430,54 @@ public class View extends JFrame implements ActionListener
     }   
     
     /**
+     * This method sets up a key listener on the description text area and removes the
+     * hint text when typing starts.
+     */
+    public void setupDescriptionTextArea()
+    {	
+        // Limit the maximum number of characters able to be entered to 97.
+        LimitedLinesDocument textAreaDocument = new LimitedLinesDocument( 1, 97 );
+        descriptionTextArea = new JTextArea();
+        descriptionTextArea.setDocument( textAreaDocument );
+        descriptionTextArea.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
+        descriptionTextArea.setForeground( Color.LIGHT_GRAY );
+        descriptionTextArea.setText( "Enter task description..." );
+        descriptionTextArea.setBackground( new Color(125, 131, 146) );
+        
+        descriptionTextArea.addKeyListener( new KeyListener()
+        {
+            @Override
+            public void keyTyped( KeyEvent e )
+            {
+                if ( !startStopButton.isEnabled() )
+                {
+                    descriptionTextArea.setText( "" );
+                    descriptionTextArea.setCaretPosition( 0 );
+                    descriptionTextArea.setForeground( Color.WHITE );
+                }
+                startStopButton.setEnabled( true );
+            }
+
+            @Override
+            public void keyReleased( KeyEvent e )
+            {
+            }
+
+            @Override
+            public void keyPressed( KeyEvent arg0 )
+            {
+            }
+        } );	    
+    }
+    
+    /**
      * Used to flash the Beer O' Clock label.
      */
-    public void beerAlarm()
+    public void setBeerAlarmLabel()
     {
         System.out.println( "Beer O' Clock!" );
         beerLabel.setText( "<html><div font color='white'>" + "Beer O' Clock!" + "</div></html>" );
-        beerLabel.setEnabled( !beerLabel.isEnabled() );
+        beerLabel.setEnabled( new DateTime().getSecondOfMinute() % 2 == 0 );
     }
     
     public void setDate( String date )
@@ -497,14 +507,6 @@ public class View extends JFrame implements ActionListener
             {
 //                dayForwardButtonActionPerformed();
             }
-            else if( source == notWorkRadioButton )
-            {
-//                notWorkRadioButtonActionPerformed( e );
-            }
-            else if( source == notJiraRadioButton )
-            {
-//                notJiraRadioButtonActionPerformed( e );
-            }
             else if( source == clearDescriptionButton )
             {
             	descriptionTextArea.setText( "" );
@@ -530,18 +532,29 @@ public class View extends JFrame implements ActionListener
         if( source instanceof JMenuItem )
         {
             if( e.getActionCommand().equalsIgnoreCase( "preferences" ) )
-                System.out.println( "Item clicked: " + e.getActionCommand() );
+            {
+            	Semaphore semaphore = new Semaphore( 1 );
+                JDialog configDialog = new Configuration( controller, semaphore );
+                configDialog.setVisible( true );
+            }
             else if( e.getActionCommand().equalsIgnoreCase( "quit" ) )
-                System.out.println( "Item clicked: " + e.getActionCommand() );
-//                controller.exitTimeLord();
+            {
+                if ( controller.isRecording() )
+                {
+                    controller.stopRecording();
+                }
+                System.exit( 0 );
+            }
             else if( e.getActionCommand().equalsIgnoreCase( "by task..." ) )
                 System.out.println( "Item clicked: " + e.getActionCommand() );
             else if( e.getActionCommand().equalsIgnoreCase( "by week..." ) )
                 System.out.println( "Item clicked: " + e.getActionCommand() );
             else if( e.getActionCommand().equalsIgnoreCase( "timelord help" ) )
-//                System.out.println( "Item clicked: " + e.getActionCommand() );
-                BareBonesBrowserLaunch.openURL( getClass().getResource(
-                        "/media/help/Welcome to Time.htm" ).toString() );
+            {
+            	URL resource = getClass().getResource( "/media/help/Welcome to Time.htm" );
+            	BareBonesBrowserLaunch.openURL( resource.toString() );
+            }
+                
             else if( e.getActionCommand().equalsIgnoreCase( "About Time:Lord" ) )
 //                System.out.println( "Item clicked: " + e.getActionCommand() );
                 new Splash( this );

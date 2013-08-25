@@ -20,7 +20,6 @@ package controller;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Frame;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -226,48 +225,22 @@ public class Controller
      */
     private void setBeerAlarm( DateTime dateTime )
     {
+    	System.out.println( dateTime.getDayOfWeek() +" "
+    		+" "+ dateTime.getHourOfDay()
+            +" "+ dateTime.getMinuteOfHour()  );
         // Handle Beer O' Clock
         if ( dateTime.getDayOfWeek() == 5
-                && dateTime.getHourOfDay() == 15
-                && dateTime.getMinuteOfHour() == 59 )
+             && dateTime.getHourOfDay() == 15
+             && dateTime.getMinuteOfHour() == 59 )
         {
-            if ( dateTime.getSecondOfMinute() % 2 == 0 )
-            {
-                beerAlarm( false );
-            }
+            view.setBeerAlarmLabel();
         }
         if ( dateTime.getDayOfWeek() == 5
-                && dateTime.getHourOfDay() == 16
-                && dateTime.getMinuteOfHour() == 00 )
+             && dateTime.getHourOfDay() == 16
+             && dateTime.getMinuteOfHour() == 00 )
         {
-            if ( dateTime.getSecondOfMinute() % 2 == 0 )
-            {
-                beerAlarm( true );
-            }
-        }
-    }
-    
-    /**
-     * A humorous method that flashes the beer icon at 15:49 on Fridays and the
-     * kills the application at 16:00.
-     * 
-     * @param kill -
-     */
-    private void beerAlarm( boolean kill )
-    {
-        System.out.println( "Beer O' Clock!" );
-        view.beerAlarm();
-
-        System.out.println( kill );
-        if ( kill )
-        {
-            if ( recording )
-            {
-                // This has to be called from MainFrame as it has all the data.
-                stopRecording();
-            }
-
-            System.exit( 0 );
+        	stopRecording();
+        	System.exit( 0 );
         }
     }
     
@@ -402,6 +375,9 @@ public class Controller
      */
     public void stopRecording()
     {
+    	if( !recording )
+    		return;
+    	
         // Save the stop time
         final DateTime currentStopTime = new DateTime();
 
@@ -477,6 +453,11 @@ public class Controller
         return Time.displayDelta( tally );
     }
     
+    /**
+     * Get the time worked per day and week and set them as the title for a border.
+     * 
+     * @return A Border with the total time worked per day and week.
+     */
     private TitledBorder createTallyBorder()
     {   
         TitledBorder border = BorderFactory.createTitledBorder( null, 
@@ -491,6 +472,39 @@ public class Controller
         
         return border;
     }
+    
+    /**
+     * This method takes in the dateLabel from the GUI and advances or
+     * decrements it by one day for each time it is clicked.
+     * 
+     * @param label - the dateLabel from the GUI that is to be changed.
+     * @param direction - increment or decrement the date.
+     */
+    public void incrememntDecrementDayButtonActionPerformed( final JLabel label, String direction )
+    {
+//        if ( direction.equals( INCREMENT_DAY ) )
+//        {
+//            dayOffset++;
+//        }
+//        else if ( direction.equals( DECREMENT_DAY ) )
+//        {
+//            dayOffset--;
+//        }
+//
+//        SwingUtilities.invokeLater( new Runnable()
+//        {
+//
+//            public void run()
+//            {
+//                DateTime dateTime = new DateTime(); // reference to current
+//                // date/time
+//                label.setText( dateTime.plusDays( dayOffset ).getDayOfMonth()
+//                        + "/" + dateTime.getMonthOfYear() + "/"
+//                        + dateTime.getYear() % 100 );
+//            }
+//        } );
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////

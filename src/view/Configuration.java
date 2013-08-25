@@ -21,7 +21,6 @@ package view;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -341,6 +340,7 @@ public class Configuration extends JDialog implements ActionListener
                 dispose();
             	// Show the main window again
                 view.setVisible( true );
+	            view.pack();
             }
             if( buttonText.toLowerCase().equals( "cancel" ) )
             {
@@ -349,6 +349,7 @@ public class Configuration extends JDialog implements ActionListener
                 dispose();   
             	// Show the main window again
                 view.setVisible( true );
+	            view.pack();
             }
         }
 		else if( source instanceof JCheckBox )
