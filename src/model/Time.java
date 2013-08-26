@@ -108,62 +108,6 @@ public class Time
 		return deltaString;
 	}
 
-//	/**
-//	 * Return a nicely formatted string containing a time delta.
-//	 * 
-//	 * @param delta - create a string for this time period
-//	 * 
-//	 * @return - a nicely formatted time period
-//	 */
-//	public static String displayDelta( Period delta )
-//	{
-//		String deltaString = "";
-//		int hours = 0;
-//		String hoursLabel = "";
-//		int minutes = 0;
-//		String minutesLabel = "";
-//
-//		// Determine whether to use plural or not
-//		if( delta.getHours() == 1 )
-//		{
-//			hoursLabel = " Hr";
-//		}
-//		else
-//		{
-//			hoursLabel = " Hrs";
-//		}
-//
-//		if( delta.getMinutes() == 1 )
-//		{
-//			minutesLabel = " Min";
-//		}
-//		else
-//		{
-//			minutesLabel = " Mins";
-//		}
-//
-//		// Convert minutes (>=60) to hours and minutes
-//		if( delta.getMinutes() >= 60 )
-//		{
-//			hours = delta.getHours() + (delta.getMinutes() / 60);
-//			minutes = delta.getMinutes() % 60;
-//		}
-//		else
-//		{
-//			hours = delta.getHours();
-//			minutes = delta.getMinutes();
-//		}
-//
-//		deltaString = "<html><div font color='white'>" + 
-//					  hours + 
-//					  hoursLabel + 
-//					  "<br>" + 
-//					  minutes + 
-//					  minutesLabel + 
-//					  "</div></html>";
-//
-//		return deltaString;
-//	}
 
 
 	/**
@@ -192,7 +136,6 @@ public class Time
 		return "" + dateTime.getDayOfMonth() + "-" + dateTime.getMonthOfYear() + "-" +
 		       dateTime.getYear();
 	}
-
 
 	/**
 	 * Get the meridian of a time.
