@@ -221,13 +221,14 @@ public class Controller
 	}
 
     /**
-     * @param dateTime
+     * This method determines whether it is Beer O' Clock (time to stop working for the week) and
+     * if so, sets the alarm off.  If configured, the application will terminate at the chosen 
+     * time. 
+     * 
+     * @param dateTime The current time.
      */
     private void setBeerAlarm( DateTime dateTime )
     {
-    	System.out.println( dateTime.getDayOfWeek() +" "
-    		+" "+ dateTime.getHourOfDay()
-            +" "+ dateTime.getMinuteOfHour()  );
         // Handle Beer O' Clock
         if ( dateTime.getDayOfWeek() == 5
              && dateTime.getHourOfDay() == 15
@@ -239,11 +240,10 @@ public class Controller
              && dateTime.getHourOfDay() == 16
              && dateTime.getMinuteOfHour() == 00 )
         {
-        	stopRecording();
-        	System.exit( 0 );
+
         }
     }
-    
+	
     /**
      * @return
      */
@@ -505,6 +505,19 @@ public class Controller
 //        } );
     }
 
+	/**
+	 * Stop recording and exit.
+	 * @return 
+	 */
+	public int exitTimeLord()
+    {
+    	stopRecording();
+    	System.out.println("close");
+		System.exit( 0 );
+    	
+		// Amazing, we can never get to here
+    	return 0;
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////

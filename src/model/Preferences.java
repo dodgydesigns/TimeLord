@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.joda.time.DateTime;
+
 /**
  * Store the user configuration details and preferences as key/value pair in a
  * hash map that is stored on disk.
@@ -55,6 +57,9 @@ public class Preferences implements Serializable
     private static final String JIRA_CURRENT_PROJECT = "jira.current.project";
     private static final String JIRA_ISSUES = "jira.issues";
 	private static final String CONNECT_TO_JIRA = "jira.connect";
+    private static final String JIRA_KILL_FOR_BEER = "jira.kill";
+    private static final String JIRA_BEER_TIME = "jira.beer.time";
+
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
@@ -240,11 +245,8 @@ public class Preferences implements Serializable
     @SuppressWarnings("unchecked")
     public Map<String,String> getProjects()
     {
-    	HashMap<String, String> convertedMap = new HashMap<String, String>();
-    	convertedMap.putAll( (Map<? extends String, ? extends Object>) preferences.get( JIRA_PROJECTS ) );
-    	
-    	return convertedMap;
-    }S
+    	return (Map<String,String>)preferences.get( JIRA_PROJECTS );
+    }
     
     /**
      * @param The project the user is logging time against.
@@ -289,7 +291,53 @@ public class Preferences implements Serializable
         preferences.put( JIRA_CURRENT_PROJECT, project );
         saveToDisk();
     }
+
+	/**
+	 * @param kill Whether the application should exit.
+	 */
+	public void setKillOnBeer( Boolean kill )
+    {System.out.println("set it"+kill);
+	    preferences.put( JIRA_KILL_FOR_BEER, kill );
+    }
+	
+	/**
+	 * @return Whether the application should exit at beer o'clock time.
+	 */
+	public boolean getKillOnBeer()
+    {System.out.println("get it"+(Boolean)preferences.get( JIRA_KILL_FOR_BEER ));
+	    return (Boolean)preferences.get( JIRA_KILL_FOR_BEER );
+    }
     
+	/**
+	 * @return The day and time the alarm should go off.
+	 */
+	public DateTime getBeerTime()
+	{
+		String dateString = (String)preferences.get( JIRA_BEER_TIME );
+		
+		if( dateString == null )
+			dateString = "5 15 59";
+		
+		String when[] = dateString.split( " " );
+
+		DateTime whenDateTime = new DateTime( 1, 
+		                                      1, 
+		                                      Integer.valueOf(when[0]) + 1, 
+		                                      Integer.valueOf(when[1]), 
+		                                      Integer.valueOf(when[2]) );
+		
+	    return whenDateTime;
+	}
+	
+	/**
+	 * @param When the alarm should go off.
+
+	 */
+	public void setBeerTime( String beerTime )
+	{
+		preferences.put( JIRA_BEER_TIME, beerTime );	
+	}
+	
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////

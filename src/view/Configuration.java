@@ -23,6 +23,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +49,9 @@ import model.JiraInterface;
 import model.Preferences;
 import model.SqlInterface;
 import net.miginfocom.swing.MigLayout;
+
+import org.joda.time.DateTime;
+
 import controller.Controller;
 
 /**
@@ -78,6 +83,10 @@ public class Configuration extends JDialog implements ActionListener
     private JTextField usernaneTextField;
     private JPasswordField passwordPasswordField;
     private JComboBox<String> projectCombo;
+	private JComboBox<String> alarmDay;
+	private JComboBox<String> alarmHour;
+	private JComboBox<String> alarmMinute;
+	private JCheckBox killOnAlarm;
     private JCheckBox connectToJira;
     private JLabel tryJIRASettingsLabel;
     
@@ -121,18 +130,34 @@ public class Configuration extends JDialog implements ActionListener
     	urlTextField.setText( preferences.getJiraUrl() );
         passwordPasswordField.setText( preferences.getPassword() );
         usernaneTextField.setText( preferences.getUserName() );
+        
+        DateTime alarmTime = preferences.getBeerTime();
+        alarmDay.setSelectedIndex( alarmTime.getDayOfWeek() - 1 );
+        alarmHour.setSelectedItem( String.valueOf(alarmTime.getHourOfDay()) );
+        alarmMinute.setSelectedItem( String.valueOf(alarmTime.getMinuteOfHour()) );
+        killOnAlarm.setSelected( preferences.getKillOnBeer() );
     }
-
+    
     /**
      * Create and layout the UI components.
      */
     private void initComponents()
     {
+		addWindowListener( new WindowAdapter()
+		{
+
+			@Override
+			public void windowClosing( WindowEvent e )
+			{
+				returnToMainWindow();
+			}
+		} );
+    	
     	// Hide the main window to reduce clutter
         view.setVisible( false );
         
         setBackground( new Color( 115, 121, 136 ) );
-        setLayout( new MigLayout("", "[][grow]", "[][shrink 0]") );
+        setLayout( new MigLayout( "", "[][]", "[][shrink 0][]0[]") );
     	setModal( true );
         getContentPane().setBackground( Color.LIGHT_GRAY );
 
@@ -157,6 +182,39 @@ public class Configuration extends JDialog implements ActionListener
         databasePanel.setBorder( border );
         databasePanel.setBackground( new Color( 115, 121, 136 ) );
 
+        JPanel beerPanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
+        border = BorderFactory.createTitledBorder( null, 
+                                                   "Alarm Settings", 
+                                                   TitledBorder.LEFT, 
+                                                   TitledBorder.TOP, 
+                                                   new Font( "Lucida Grande", 1, 12 ), 
+                                                   Color.WHITE );
+        beerPanel.setBorder( border );
+        beerPanel.setBackground( new Color( 115, 121, 136 ) );
+        
+        // ComboBoxes
+        alarmDay = new JComboBox<String>( new String[]{  "Monday", 
+                                                         "Tuesday",
+                                                         "Wednesday",
+                                                         "Thursday",
+                                                         "Friday",
+                                                         "Saturday",
+                                                         "Sunday"} );
+        alarmDay.setSelectedItem( "Friday" );
+        
+        String[] hours = new String[24];
+        for( int i = 0; i < 24; i++ )
+        	hours[i] = String.valueOf( i );
+        alarmHour = new JComboBox<String>( hours );
+        alarmHour.setSelectedItem( "16" );
+        
+        String[] minutes = new String[60];
+        minutes[0] = "00";
+        for( int i = 1; i <= 59; i++ )
+        	minutes[i] = String.valueOf( i );
+    	alarmMinute = new JComboBox<String>( minutes );
+    	alarmMinute.setSelectedItem( "00" );
+    	
         // Labels
 		JLabel logoLabel = new JLabel( new javax.swing.ImageIcon( getClass().getResource( "/media/" +
 																						  "timelord logo.png" ) ) );
@@ -181,23 +239,23 @@ public class Configuration extends JDialog implements ActionListener
         connectToJira = new JCheckBox();
         connectToJira.addActionListener( this );
         
+        killOnAlarm = new JCheckBox( "Exit on Alarm" );
+        killOnAlarm.setForeground( Color.WHITE );
+        killOnAlarm.addActionListener( this );
+        
         // Buttons
         JButton tryButton = new JButton( "Try..." );
         tryButton.addActionListener( this );
         JButton backupDBButton = new JButton( "Backup" );
         backupDBButton.addActionListener( this );
-        JButton restroreDBButton = new JButton( "Restore" );
-        restroreDBButton.addActionListener( this );
+        JButton restoreDBButton = new JButton( "Restore" );
+        restoreDBButton.addActionListener( this );
         JButton clearDBButton = new JButton( "Clear" );
         clearDBButton.addActionListener( this );
         JButton cancelButton = new JButton( "Cancel" );
         cancelButton.addActionListener( this );
         JButton okButton = new JButton( "OK" );
         okButton.addActionListener( this );
-        
-        add( logoLabel, "span, wrap 15" );
-        add( jiraPanel, "wrap, span, grow" );
-        add( databasePanel, "wrap 15, span, grow" );
 
         jiraPanel.add( connectToJira );
         jiraPanel.add( new JLabel( "<html><font color='white'>Connect to Jira at startup</font>" ), 
@@ -219,8 +277,17 @@ public class Configuration extends JDialog implements ActionListener
         databasePanel.add( new JLabel( "<html><font color='white'>Backup DB:</font>" ) );
         databasePanel.add( backupDBButton, "gapleft 30, width 80:80:80, wrap" );
         databasePanel.add( new JLabel( "<html><font color='white'>Restore DB:</font>" ) );
-        databasePanel.add( restroreDBButton, "gapleft 30, width 80:80:80," );
+        databasePanel.add( restoreDBButton, "gapleft 30, width 80:80:80," );
 
+        beerPanel.add( killOnAlarm );
+        beerPanel.add( alarmDay );
+        beerPanel.add( alarmHour );
+        beerPanel.add( alarmMinute );
+
+        add( logoLabel, "span, wrap 15" );
+        add( jiraPanel, "wrap, span, grow" );
+        add( databasePanel, "wrap 15, span, grow" );
+		add( beerPanel, "wrap 15, span, grow" );
         add( cancelButton, "right, width 80:80:80," );
         add( okButton, "right, width 80:80:80," );
 
@@ -238,7 +305,7 @@ public class Configuration extends JDialog implements ActionListener
     	connected = jiraInterface.connectToJira();
         if( connected )
         {
-            tryJIRASettingsLabel.setText( "Success!" );
+            tryJIRASettingsLabel.setText( "<html><font color='green'>Success!</font></html>" );
             
             // Retrieve all the projects and hold in jiraInterface.
             jiraInterface.getProjects();
@@ -253,7 +320,7 @@ public class Configuration extends JDialog implements ActionListener
         }
         else
         {
-            tryJIRASettingsLabel.setText( "Sorry, failed!" );
+            tryJIRASettingsLabel.setText( "<html><font color='red'>Sorry, failed</font></html>" );
         }
     }
 
@@ -295,6 +362,10 @@ public class Configuration extends JDialog implements ActionListener
         	preferences.setJiraUrl( urlTextField.getText() );
         else
         	preferences.setJiraUrl( "http://" + urlTextField.getText() );
+        
+        preferences.setBeerTime( alarmDay.getSelectedIndex() + " " +
+        						 alarmHour.getSelectedItem() + " " + 
+        						 alarmMinute.getSelectedItem() );
     }
 
 	@Override
@@ -336,28 +407,34 @@ public class Configuration extends JDialog implements ActionListener
             	setPreferenceValues();
             	// Set this now that they've selected a project
                 preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-                semaphore.release();
-                dispose();
-            	// Show the main window again
-                view.setVisible( true );
-	            view.pack();
+                returnToMainWindow();
             }
             if( buttonText.toLowerCase().equals( "cancel" ) )
             {
                 // TODO: undo any changes
-            	semaphore.release();
-                dispose();   
-            	// Show the main window again
-                view.setVisible( true );
-	            view.pack();
+            	returnToMainWindow();
             }
         }
 		else if( source instanceof JCheckBox )
-		{
-			preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
+		{			
+			if( e.getActionCommand().toLowerCase().equals( "exit on alarm" ))
+				preferences.setKillOnBeer( killOnAlarm.isSelected() );
+			else
+				preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
 		}
     }
 
+	/**
+	 * Close this dialog and return to the main window.
+	 */
+	private void returnToMainWindow()
+	{
+        semaphore.release();
+        dispose();
+    	// Show the main window again
+        view.setVisible( true );
+        view.pack();
+	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////

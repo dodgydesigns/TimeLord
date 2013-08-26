@@ -135,7 +135,6 @@ public class View extends JFrame implements ActionListener
         setBackground( new Color( 85, 91, 106 ) );
         setPreferredSize( new Dimension(680, 700) );
         setResizable( false );
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         // Menu
         drawMenu();
