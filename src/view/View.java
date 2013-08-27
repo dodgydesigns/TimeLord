@@ -36,6 +36,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
@@ -136,6 +138,16 @@ public class View extends JFrame implements ActionListener
         setPreferredSize( new Dimension(680, 700) );
         setResizable( false );
         
+		addWindowListener( new WindowAdapter()
+		{
+
+			@Override
+			public void windowClosing( WindowEvent e )
+			{
+				controller.exitTimeLord();
+			}
+		} );
+		
         // Menu
         drawMenu();
 
@@ -246,10 +258,9 @@ public class View extends JFrame implements ActionListener
         topPanel.add( dayForwardButton, "" );
         topPanel.setBackground( new Color( 85, 91, 106 ) );
 
-        JPanel dataEntryPanel = new JPanel( new MigLayout( "",
-                                                  //start clock radiobut combo       
-                                                    "10[]20[200]150    []20    []10[grow][]", 
-                                                    "2[][grow]2" ) );
+        JPanel dataEntryPanel = new JPanel( new MigLayout( "", 
+                                                           "10[]20[200]150[]20[]10[grow][]", 
+                                                    	   "2[][grow]2" ) );
         dataEntryPanel.add( startStopButton );
         dataEntryPanel.add( timeLabel, "aligny 45%, hmax 30" );
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
@@ -356,7 +367,6 @@ public class View extends JFrame implements ActionListener
         taskTableHeader.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
         taskTableHeader.setBackground( new Color( 85, 91, 106 ) );
         taskTableHeader.setForeground( Color.WHITE );
-//        taskTableHeader.setAlignmentY( CENTER_ALIGNMENT );
         
         // Disable auto resizing
         taskTable.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
@@ -376,7 +386,7 @@ public class View extends JFrame implements ActionListener
         TableColumn col0 = colModel.getColumn( 0 );
         col0.setPreferredWidth( 70 );
         col0.setCellRenderer( new ColourCellRenderer( Color.WHITE, new Color( 10, 150, 10 ) ) );
-
+  
         // Stop
         TableColumn col1 = colModel.getColumn( 1 );
         col1.setPreferredWidth( 70 );
@@ -422,10 +432,6 @@ public class View extends JFrame implements ActionListener
 			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
 		
         jiraComboBox.setPreferredSize( new Dimension(150, 28) );
-        
-//		view.enableJIRAPanel( true );
-//		view.getJiraComboBox().setModel( result.getModel() );
-//		usingJIRA = true;
     }   
     
     /**
@@ -470,6 +476,18 @@ public class View extends JFrame implements ActionListener
     }
     
     /**
+     * This method is used to reset the description text area ready for a new description to be
+     * entered.
+     */
+    public void resetDescriptionTextfield()
+    {
+    	descriptionTextArea.setText( "Enter task description..." );
+    	descriptionTextArea.setCaretPosition( 0 );
+    	descriptionTextArea.requestFocus();
+    	startStopButton.setEnabled( false );
+    }
+    
+    /**
      * Used to flash the Beer O' Clock label.
      */
     public void setBeerAlarmLabel()
@@ -508,9 +526,7 @@ public class View extends JFrame implements ActionListener
             }
             else if( source == clearDescriptionButton )
             {
-            	descriptionTextArea.setText( "" );
-            	descriptionTextArea.setCaretPosition( 0 );
-            	descriptionTextArea.requestFocus();
+            	resetDescriptionTextfield();
             }
             else if( source == quitButton )
             {
@@ -640,6 +656,17 @@ public class View extends JFrame implements ActionListener
 		return taskTable;
 	}
 
+	public JToggleButton getStartStopButton()
+	{
+		return startStopButton;
+	}
+
+	public void setStartStopButton( JToggleButton startStopButton )
+	{
+		this.startStopButton = startStopButton;
+	}
+
+	
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------

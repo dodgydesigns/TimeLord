@@ -20,6 +20,7 @@
 package view;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,6 +33,7 @@ import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -157,7 +159,7 @@ public class Configuration extends JDialog implements ActionListener
         view.setVisible( false );
         
         setBackground( new Color( 115, 121, 136 ) );
-        setLayout( new MigLayout( "", "[][]", "[][shrink 0][]0[]") );
+        setLayout( new MigLayout( "", "[][]", "[][][][]") );
     	setModal( true );
         getContentPane().setBackground( Color.LIGHT_GRAY );
 
@@ -182,7 +184,7 @@ public class Configuration extends JDialog implements ActionListener
         databasePanel.setBorder( border );
         databasePanel.setBackground( new Color( 115, 121, 136 ) );
 
-        JPanel beerPanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
+        JPanel beerPanel = new JPanel( new MigLayout( "", "[]", "[]" ) );
         border = BorderFactory.createTitledBorder( null, 
                                                    "Alarm Settings", 
                                                    TitledBorder.LEFT, 
@@ -216,10 +218,13 @@ public class Configuration extends JDialog implements ActionListener
     	alarmMinute.setSelectedItem( "00" );
     	
         // Labels
-		JLabel logoLabel = new JLabel( new javax.swing.ImageIcon( getClass().getResource( "/media/" +
-																						  "timelord logo.png" ) ) );
-		tryJIRASettingsLabel = new JLabel( "<html><font color='white'>Try to connect using current settings:" );
-		logoLabel.setBackground( Color.WHITE );
+		JLabel logoLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
+																			  "timelord logo.png" 
+																			) ) );
+		tryJIRASettingsLabel = new JLabel( "<html><font color='white'>Try to connect using " +
+										   "current settings:" );
+		logoLabel.setBackground( new Color( 85, 91, 106 ) );
+		logoLabel.setPreferredSize( new Dimension( 450, 0 ) );
 		logoLabel.setOpaque( true );
 
         // TextFields
@@ -284,10 +289,10 @@ public class Configuration extends JDialog implements ActionListener
         beerPanel.add( alarmHour );
         beerPanel.add( alarmMinute );
 
-        add( logoLabel, "span, wrap 15" );
+        add( logoLabel, "span, wrap" );
         add( jiraPanel, "wrap, span, grow" );
-        add( databasePanel, "wrap 15, span, grow" );
-		add( beerPanel, "wrap 15, span, grow" );
+        add( databasePanel, "wrap, span, grow" );
+		add( beerPanel, "wrap, span, grow" );
         add( cancelButton, "right, width 80:80:80," );
         add( okButton, "right, width 80:80:80," );
 
@@ -339,6 +344,8 @@ public class Configuration extends JDialog implements ActionListener
 	            database.dropDataBase();
 	            database.createTimeLordDB();
 	            view.getTaskTable().setModel( new DefaultTableModel() );
+	            view.getStartStopButton().setEnabled( false );
+	            view.resetDescriptionTextfield();
             }
             catch( SQLException e )
             {

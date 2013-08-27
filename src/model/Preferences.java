@@ -296,7 +296,7 @@ public class Preferences implements Serializable
 	 * @param kill Whether the application should exit.
 	 */
 	public void setKillOnBeer( Boolean kill )
-    {System.out.println("set it"+kill);
+    {
 	    preferences.put( JIRA_KILL_FOR_BEER, kill );
     }
 	
@@ -304,7 +304,7 @@ public class Preferences implements Serializable
 	 * @return Whether the application should exit at beer o'clock time.
 	 */
 	public boolean getKillOnBeer()
-    {System.out.println("get it"+(Boolean)preferences.get( JIRA_KILL_FOR_BEER ));
+    {
 	    return (Boolean)preferences.get( JIRA_KILL_FOR_BEER );
     }
     
