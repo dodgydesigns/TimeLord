@@ -67,7 +67,9 @@ public class Controller
     
 	private boolean recording;
 	private int taskCount;
+	private DateTime selectedDate = new DateTime(); // reference to current date/time
 	private DateTime currentStartTime;
+	private int dayOffset;
 	private Period dayTally;
 	protected JLabel dayTallyValueLabel;
 
@@ -78,6 +80,8 @@ public class Controller
     {
         this.view = view;
         view.addListener( this );
+        
+        dayOffset = 0;
         
         // Create a link to the DB
         try
@@ -146,7 +150,8 @@ public class Controller
         view.setJiraComboBox( issues );
         view.initComponents();
     
-		setDateLabel();
+		setDateLabel( new DateTime() );
+		setTimeLabel();
 		
         // Set the tally for today on the dayTallyLabel
 		dayTally = database.getTodayTally();
@@ -162,45 +167,50 @@ public class Controller
 			}
 		} );
     }
-    
+ 
+    /**
+     * Set the date label depending on the date provided.
+     * 
+     * @param date The date to set the date label to.
+     */
+    public void setDateLabel( final DateTime date )
+    {
+		DateTime.Property dayOfWeek = date.dayOfWeek();
+		view.setDate( "<html><div align='center' font color='white'>" + 
+					  "<font size='6'>" +
+		              dayOfWeek.getAsText() + 
+		              "</font>" +
+		              "<br>" + 
+					  "<font size='4'>" +
+					  date.getDayOfMonth() + 
+		              "/" +
+		              date.getMonthOfYear() +
+		              "</font></div></html>" );
+    }
     /**
      * Set current date for the date label and time for the time label.  
      * This is updated every second to ensure the values are kept current.
      * 
      * If the clock reaches Friday 4pm, the beer alarm goes off.
-     * 
-     * @return Today's date formatted for the dataLabel in the GUI.
      */
-    public void setDateLabel()
+    //TODO update date/day if 0000ticks over
+    public void setTimeLabel()
     {      
 		TimerTask dateUpdater = new TimerTask()
 		{
-
 			@Override
 			public void run()
 			{
-				DateTime dateTime = new DateTime(); // reference to current date/time
-				DateTime.Property dayOfWeek = dateTime.dayOfWeek();
-				String minutes = (dateTime.getMinuteOfHour() < 10 ? "0" + dateTime.getMinuteOfHour()
-				                                                  : String.valueOf(dateTime.getMinuteOfHour()) );
-				String hours = (String)(dateTime.getHourOfDay() < 10 ? "0" + dateTime.getHourOfDay()
-					                                                 : String.valueOf(dateTime.getHourOfDay()) );
+				DateTime currentTime = new DateTime();
 				
-				// Set date label
-				view.setDate( "<html><div align='center' font color='white'>" + 
-							  "<font size='6'>" +
-				              dayOfWeek.getAsText() + 
-				              "</font>" +
-				              "<br>" + 
-							  "<font size='4'>" +
-				              dateTime.getDayOfMonth() + 
-				              "/" +
-				              dateTime.getMonthOfYear() +
-				              "</font></div></html>" );
+				String minutes = (currentTime.getMinuteOfHour() < 10 ? "0" + currentTime.getMinuteOfHour()
+				                                                : String.valueOf(currentTime.getMinuteOfHour()) );
+				String hours = (String)(currentTime.getHourOfDay() < 10 ? "0" + currentTime.getHourOfDay()
+					                                               : String.valueOf(currentTime.getHourOfDay()) );
 				
 				// Set clock with a blinking ':'.
 				String colonText = "";
-				if( dateTime.getSecondOfMinute() % 2 == 0 )
+				if( new DateTime().getSecondOfMinute() % 2 == 0 )
 					colonText = "<font color='gray'>";
 				else
 					colonText = "<font color='white'>";
@@ -213,7 +223,7 @@ public class Controller
 				              				 "</font>" +
 				              				 minutes + 
 				              				 "</font></div></html>" );
-				setBeerAlarm( dateTime );
+				setBeerAlarm( selectedDate );
 			}
 		};
 		Timer timer = new Timer();
@@ -240,12 +250,18 @@ public class Controller
              && dateTime.getHourOfDay() == 16
              && dateTime.getMinuteOfHour() == 00 )
         {
-
+        	if( preferences.getKillOnBeer() )
+        		System.exit( 0 );
         }
     }
 	
     /**
-     * @return
+     * This method gets a day's Jira issues.  It first tries to get them from the preferences
+     * and failing that, from the Jira server.
+     * 
+     * If a problem occurs with both attempts, an error message is displayed.
+     * 
+     * @return A list of Jira issues.
      */
     public ArrayList<String[]> getJiraIssues()
     {
@@ -366,12 +382,6 @@ public class Controller
      * When the recording is stopped, calculate the amount of time spent and
      * display with the stop time. This data is also added to the db and the the
      * day and week tally labels.
-     * 
-     * @param table - task table showing today's task statistics.
-     * @param time - the stop time.
-     * @param dayTallyLabel - the label showing the total time worked today.
-     * @param weekTallyLabel - the label showing the total time worked this
-     *            week.
      */
     public void stopRecording()
     {
@@ -422,8 +432,6 @@ public class Controller
     /**
      * Read the database to determine how many hours:minutes that have been
      * complete on the current day.
-     * 
-     * @return String - total amount of time worked on the current day.
      */
     public String calculateDayTally()
     {
@@ -437,8 +445,6 @@ public class Controller
      * complete on the current day.
      * 
      * A week starts on Sunday and ends on Saturday.
-     * 
-     * @return String - total amount of time worked this week.
      */
     public String calculateWeekTally()
     {
@@ -477,32 +483,33 @@ public class Controller
      * This method takes in the dateLabel from the GUI and advances or
      * decrements it by one day for each time it is clicked.
      * 
-     * @param label - the dateLabel from the GUI that is to be changed.
-     * @param direction - increment or decrement the date.
+     * @param Increment or decrement the date.
      */
-    public void incrememntDecrementDayButtonActionPerformed( final JLabel label, String direction )
+	public void dayButtonAction( int direction )
     {
-//        if ( direction.equals( INCREMENT_DAY ) )
-//        {
-//            dayOffset++;
-//        }
-//        else if ( direction.equals( DECREMENT_DAY ) )
-//        {
-//            dayOffset--;
-//        }
-//
-//        SwingUtilities.invokeLater( new Runnable()
-//        {
-//
-//            public void run()
-//            {
-//                DateTime dateTime = new DateTime(); // reference to current
-//                // date/time
-//                label.setText( dateTime.plusDays( dayOffset ).getDayOfMonth()
-//                        + "/" + dateTime.getMonthOfYear() + "/"
-//                        + dateTime.getYear() % 100 );
-//            }
-//        } );
+    	dayOffset += direction;
+    	DateTime selectedDate = getCurrentDateTime().plusDays( dayOffset );
+    	setDateLabel( selectedDate );
+    	String selectedDateString = Time.getReferableDate( selectedDate );
+    	String[] colHeaders = getDatabase().getColumnHeaders();
+        String[][] selectedDateIssues = null;
+        try
+        {
+            selectedDateIssues = getDatabase().getEntriesByDate( selectedDateString );
+        }
+        catch( SQLException e1 )
+        {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        
+        DefaultTableModel tableModel = new DefaultTableModel( selectedDateIssues,
+                                                              colHeaders );
+       	   
+        getView().getTaskTable().setModel( tableModel );
+        view.setupColumns();
+        getView().getStartStopButton().setEnabled( false );
+        getView().resetDescriptionTextfield();	    
     }
 
 	/**
@@ -512,12 +519,12 @@ public class Controller
 	public int exitTimeLord()
     {
     	stopRecording();
-    	System.out.println("close");
 		System.exit( 0 );
     	
 		// Amazing, we can never get to here
     	return 0;
     }
+	
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -568,6 +575,18 @@ public class Controller
 	{
 		this.recording = recording;
 	}
+
+	public DateTime getCurrentDateTime()
+	{
+		return selectedDate;
+	}
+
+	public void setCurrentDateTime( DateTime currentDateTime )
+	{
+		this.selectedDate = currentDateTime;
+	}
+
+
 	
 	
     //----------------------------------------------------------

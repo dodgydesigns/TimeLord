@@ -99,6 +99,7 @@ public class SqlInterface
         		                  "/*2*/start, /*3*/stop, /*4*/delta, /*5*/jira, " +
         		                  "/*6*/description, /*7*/dayTally);" );
     }
+    
 
     /**
      * The controller records data to the database as it is generated i.e. when
@@ -172,6 +173,14 @@ public class SqlInterface
         statementHandler.executeUpdate( "drop table if exists timelord;" );
     }
 
+    /**
+     * @return The column headers for the TimeLord task table.
+     */
+    public String[] getColumnHeaders()
+    {
+    	return new String[] {"Start", "Stop", "Delta", "Jira", "Description"};
+    }
+    
     /**
      * Get every entry in the database.
      * 

@@ -135,7 +135,7 @@ public class View extends JFrame implements ActionListener
         // setDefaultCloseOperation(stopRecording());
         setTitle( "TimeLord" );
         setBackground( new Color( 85, 91, 106 ) );
-        setPreferredSize( new Dimension(680, 700) );
+        setPreferredSize( new Dimension(700, 700) );
         setResizable( false );
         
 		addWindowListener( new WindowAdapter()
@@ -251,7 +251,7 @@ public class View extends JFrame implements ActionListener
                                                           "5[grow]5",
                                                           "0[20][][300, grow][]0" ) );
 
-        JPanel topPanel = new JPanel( new MigLayout( "", "[]0[][][]", "[]" ) );
+        JPanel topPanel = new JPanel( new MigLayout( "", "[]0[][300][]", "[]" ) );
         topPanel.add( iconLabel, "" );
         topPanel.add( dayBackButton, "" );
         topPanel.add( dateLabel, "grow" );
@@ -379,7 +379,7 @@ public class View extends JFrame implements ActionListener
     /**
      * Setup the column widths, colours and behaviours.
      */
-    protected void setupColumns()
+    public void setupColumns()
     {
     	TableColumnModel colModel = taskTable.getColumnModel();
         // Start
@@ -464,14 +464,10 @@ public class View extends JFrame implements ActionListener
             }
 
             @Override
-            public void keyReleased( KeyEvent e )
-            {
-            }
+            public void keyReleased( KeyEvent e ) {}
 
             @Override
-            public void keyPressed( KeyEvent arg0 )
-            {
-            }
+            public void keyPressed( KeyEvent arg0 ) {}
         } );	    
     }
     
@@ -518,11 +514,11 @@ public class View extends JFrame implements ActionListener
             }
             else if( source == dayBackButton )
             {
-//                dayBackButtonActionPerformed( e );
+            	controller.dayButtonAction( -1 );
             }
             else if( source == dayForwardButton )
             {
-//                dayForwardButtonActionPerformed();
+            	controller.dayButtonAction( +1);
             }
             else if( source == clearDescriptionButton )
             {
