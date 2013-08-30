@@ -24,13 +24,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
@@ -71,7 +69,6 @@ public class Controller
 	private DateTime currentStartTime;
 	private int dayOffset;
 	private Period dayTally;
-	protected JLabel dayTallyValueLabel;
 
     //----------------------------------------------------------
     //                      CONSTRUCTORS
@@ -112,20 +109,25 @@ public class Controller
         {
         	// Get the configuration dialog ready in case there is a problem starting up e.g.
         	// there is no preferences file or the Jira connection failed.
-        	Semaphore semaphore = new Semaphore( 1 );
             preferences.saveToDisk();
-            
-            try
+
+            JDialog configDialog = new Configuration( this, null );
+            synchronized( configDialog )
             {
-    	        semaphore.acquire();
+            	try
+                {
+	                configDialog.wait();
+                }
+                catch( InterruptedException e )
+                {
+	                // TODO Auto-generated catch block
+	                e.printStackTrace();
+                }
             }
-            catch( InterruptedException e1 )
-            {
-    	        e1.printStackTrace();
-            }
-            JDialog configDialog = new Configuration( this, semaphore );
-            
-            configDialog.setVisible( true );
+        }
+        else
+        {
+        	view.setJiraComboBox();
         }
         
         try
@@ -145,17 +147,13 @@ public class Controller
         }
      
         // Start drawing the GUI
-        // Get the issues from the Jira server
-		ArrayList<String[]> issues = getJiraIssues();
-        view.setJiraComboBox( issues );
         view.initComponents();
     
 		setDateLabel( new DateTime() );
 		setTimeLabel();
 		
         // Set the tally for today on the dayTallyLabel
-		dayTally = database.getTodayTally();
-        view.getBottomPanel().setBorder( createTallyBorder() );
+        view.getBottomPanel().setBorder( setTallyBorder( new DateTime() ) );
         
 		SwingUtilities.invokeLater( new Runnable()
 		{
@@ -265,20 +263,18 @@ public class Controller
      */
     public ArrayList<String[]> getJiraIssues()
     {
-
-        int i = 0;
         ArrayList<String[]> issues = new ArrayList<String[]>();
 
         if( jiraInterface.getToken() != null )
         {
-            try
+			try
             {
-            	issues = jiraInterface.getIssues();
-            	preferences.setIssuesForProject( issues );
+                issues = jiraInterface.getIssues();
             }
             catch( XmlRpcException e )
             {
-    	        e.printStackTrace();
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
         else
@@ -287,7 +283,7 @@ public class Controller
         }
 
         // Can't get issues from preferences or the server, get user to check configuration.
-        while( issues == null || issues.isEmpty() )
+        while( issues == null )
         {
         	int selection = JOptionPane.showConfirmDialog( view, 
                         	                               "Could not connect to Jira server.  Please" +
@@ -296,8 +292,7 @@ public class Controller
                         	                               JOptionPane.OK_CANCEL_OPTION );
         	if( selection == JOptionPane.OK_OPTION )
         	{
-				Semaphore semaphore = new Semaphore( 1 );
-				Configuration configuration = new Configuration( this, semaphore );
+				Configuration configuration = new Configuration( this, null );
 				configuration.setVisible( true );
         	}
         	else
@@ -312,21 +307,9 @@ public class Controller
             }
         }
         
-        // We can still start without any issues but can't perform any of the following.
         if( issues != null )
-    	{
         	preferences.setIssuesForProject( issues );
-    
-            String[][] jiraData = new String[2][issues.size()];
-    
-            for ( String[] entries : issues )
-            {
-                jiraData[0][i] = entries[0];
-                jiraData[1][i] = entries[2];
-                i++;
-            }
-    	}
-        
+                
         return issues;
     }
     
@@ -413,7 +396,7 @@ public class Controller
             	view.getTaskTable().invalidate();
             	
                 // Set the tally for today on the dayTallyLabel
-                view.getBottomPanel().setBorder( createTallyBorder() );
+                view.getBottomPanel().setBorder( setTallyBorder( new DateTime() ) );
             }
         } );
 
@@ -433,9 +416,9 @@ public class Controller
      * Read the database to determine how many hours:minutes that have been
      * complete on the current day.
      */
-    public String calculateDayTally()
+    public String calculateDayTally( DateTime date )
     {
-        Period tally = database.getTodayTally();
+        Period tally = database.getTodayTally( date );
 
         return Time.displayDelta( tally );
     }
@@ -446,15 +429,15 @@ public class Controller
      * 
      * A week starts on Sunday and ends on Saturday.
      */
-    public String calculateWeekTally()
+    public String calculateWeekTally( DateTime dayInWeek )
     {
         // What is today's index in the week
-        int today = new DateTime().getDayOfWeek();
-        DateTime todayDate = new DateTime();
+        int selectedDay = dayInWeek.getDayOfWeek();
+        
         DateTime startOfWeek = new DateTime();
-        startOfWeek = todayDate.minusDays( today );
+        startOfWeek = dayInWeek.minusDays( selectedDay );
 
-        Period tally = database.getWeekTally( startOfWeek, todayDate );
+        Period tally = database.getWeekTally( startOfWeek, dayInWeek );
 
         return Time.displayDelta( tally );
     }
@@ -462,15 +445,17 @@ public class Controller
     /**
      * Get the time worked per day and week and set them as the title for a border.
      * 
+     * @param The date to set the tally for.
+     * 
      * @return A Border with the total time worked per day and week.
      */
-    private TitledBorder createTallyBorder()
+    private TitledBorder setTallyBorder( DateTime thisDay )
     {   
         TitledBorder border = BorderFactory.createTitledBorder( null, 
-                                                                "Week: " 
-                                                                + calculateWeekTally() + 
+                                                                "Week: "  + 
+                                                                calculateWeekTally( thisDay ) + 
                                                                 "   Day: " + 
-                                                                Time.displayDelta( dayTally ), 
+                                                                calculateDayTally( thisDay ), 
                                                                 TitledBorder.LEFT, 
                                                                 TitledBorder.TOP, 
                                                                 new Font( "Lucida Grande", 1, 12 ), 
@@ -506,10 +491,17 @@ public class Controller
         DefaultTableModel tableModel = new DefaultTableModel( selectedDateIssues,
                                                               colHeaders );
        	   
+        // Update the tally border
+        view.getBottomPanel().setBorder( setTallyBorder( selectedDate ) );
+
         getView().getTaskTable().setModel( tableModel );
         view.setupColumns();
-        getView().getStartStopButton().setEnabled( false );
-        getView().resetDescriptionTextfield();	    
+        
+        if( !recording )
+        {
+            getView().getStartStopButton().setEnabled( false );
+            getView().resetDescriptionTextfield();	
+        }
     }
 
 	/**

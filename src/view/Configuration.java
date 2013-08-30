@@ -22,6 +22,7 @@ package view;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -29,7 +30,6 @@ import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -44,6 +44,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
@@ -97,26 +99,29 @@ public class Configuration extends JDialog implements ActionListener
     private SqlInterface database;
 
     private JiraInterface jiraInterface;
-	private Semaphore semaphore;
 	private boolean connected;
 	private Map<String, String> projects;
+
+	private SwingWorker<Boolean,Void> jiraAttemptWorker;
+	private SwingWorker<Boolean,Void> jiraIssuesWorker;
+
+	private Point locationOnScreen;
 
 	//----------------------------------------------------------
 	//                      CONSTRUCTORS
 	//----------------------------------------------------------
-    public Configuration( Controller controller, Semaphore semaphore )
+    public Configuration( Controller controller, Point locationOnScreen )
     {
         super( controller.getView() );
         
-        this.semaphore = semaphore;
         this.view = controller.getView();
         this.preferences = controller.getPreferences();
         this.database = controller.getDatabase();
         this.jiraInterface = controller.getJiraInterface();
-
+        this.locationOnScreen = locationOnScreen;
+        
         initComponents();
         loadPreferences();
-        setLocationRelativeTo( view );
     }
 
 	//----------------------------------------------------------
@@ -145,6 +150,8 @@ public class Configuration extends JDialog implements ActionListener
      */
     private void initComponents()
     {
+    	setLocationRelativeTo( getParent() );
+    	
 		addWindowListener( new WindowAdapter()
 		{
 
@@ -295,38 +302,70 @@ public class Configuration extends JDialog implements ActionListener
 		add( beerPanel, "wrap, span, grow" );
         add( cancelButton, "right, width 80:80:80," );
         add( okButton, "right, width 80:80:80," );
+		setLocation( 50, 50 );
 
-        pack();
+        SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+				pack();
+	            setVisible( true );	
+			}
+		} );
         urlTextField.requestFocus();
     }
 
     /**
-     * Get the settings just entered and try to connect to JIRA server.
+     * Get the settings just entered and try to connect to JIRA server.  This could take a while
+     * so put it in a worker thread.
      */
     private void tryButtonActionPerformed()
     {
     	setPreferenceValues();
-    	
-    	connected = jiraInterface.connectToJira();
-        if( connected )
-        {
-            tryJIRASettingsLabel.setText( "<html><font color='green'>Success!</font></html>" );
-            
-            // Retrieve all the projects and hold in jiraInterface.
-            jiraInterface.getProjects();
 
-            projects = new HashMap<String,String>();
-            projects.putAll( jiraInterface.getProjectsKeyName() );
-            preferences.setProjects( projects );
+    	// This could take ages
+    	jiraAttemptWorker = new SwingWorker<Boolean,Void>()
+    	{
+    		@Override
+    		protected Boolean doInBackground() throws Exception
+    		{
+    	    	connected = jiraInterface.connectToJira();
 
-            String[] projectsNames = projects.values().toArray( new String[projects.size()] );
-			DefaultComboBoxModel<String> model = new DefaultComboBoxModel<String>( projectsNames );
-            projectCombo.setModel( model );
-        }
-        else
-        {
-            tryJIRASettingsLabel.setText( "<html><font color='red'>Sorry, failed</font></html>" );
-        }
+    			return connected;
+    		}
+
+			// Can safely update the GUI from this method.
+			protected void done()
+			{
+				if( connected )
+				{
+					tryJIRASettingsLabel.setText( "Success!" );
+					tryJIRASettingsLabel.setForeground( new Color( 100, 255, 100 ) );
+
+					// Retrieve all the projects and hold in jiraInterface.
+					jiraInterface.getProjects();
+
+					projects = new HashMap<String,String>();
+					projects.putAll( jiraInterface.getProjectsKeyName() );
+					preferences.setProjects( projects );
+
+					String[] projectsNames =
+					    projects.values().toArray( new String[projects.size()] );
+					DefaultComboBoxModel<String> model =
+					    new DefaultComboBoxModel<String>( projectsNames );
+					projectCombo.setModel( model );
+				}
+				else
+				{
+					tryJIRASettingsLabel.setText( "Sorry, Failed!" );
+					tryJIRASettingsLabel.setForeground( new Color( 255, 50, 50 ) );
+				}
+			}
+		};
+
+		jiraAttemptWorker.execute();
     }
 
 	/**
@@ -411,10 +450,7 @@ public class Configuration extends JDialog implements ActionListener
         	}
             if( buttonText.toLowerCase().equals( "ok" ) )
             {
-            	setPreferenceValues();
-            	// Set this now that they've selected a project
-                preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-                returnToMainWindow();
+            	okButtonPressed();
             }
             if( buttonText.toLowerCase().equals( "cancel" ) )
             {
@@ -430,14 +466,59 @@ public class Configuration extends JDialog implements ActionListener
 				preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
 		}
     }
+		
+	private void okButtonPressed()
+	{
+    	setPreferenceValues();
+    	// Set this now that they've selected a project
+        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
 
+//		// This could take ages
+//		jiraIssuesWorker = new SwingWorker<Boolean,Void>()
+//		{
+//			@Override
+//			protected Boolean doInBackground() throws Exception
+//			{
+				view.setJiraComboBox();
+//
+//				return connected;
+//			}
+//
+//			// Can safely update the GUI from this method.
+//			protected void done()
+//			{
+//				if( connected )
+//				{
+//
+//				}
+//				else
+//				{
+//
+//				}
+//			}
+//		};
+//
+//		jiraIssuesWorker.execute();
+		
+
+        if( jiraAttemptWorker != null && !jiraAttemptWorker.isDone() )
+        	jiraAttemptWorker.cancel( true );
+        
+        returnToMainWindow();
+	}
+	
 	/**
 	 * Close this dialog and return to the main window.
 	 */
 	private void returnToMainWindow()
 	{
-        semaphore.release();
         dispose();
+        
+        synchronized( this )
+        {
+        	this.notify();
+        }
+        
     	// Show the main window again
         view.setVisible( true );
         view.pack();

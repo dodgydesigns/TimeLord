@@ -146,6 +146,18 @@ public class Preferences implements Serializable
                 System.out.println( "Prefs: IO error." );
             }
         }
+        else
+        {
+        	preferences.put( JIRA_USERNAME, null );
+        	preferences.put( JIRA_PASSWORD, null );
+        	preferences.put( JIRA_URL, null );
+        	preferences.put( JIRA_PROJECTS, null );
+        	preferences.put( JIRA_CURRENT_PROJECT, null );
+        	preferences.put( JIRA_ISSUES, null );
+        	preferences.put( CONNECT_TO_JIRA, null );
+        	preferences.put( JIRA_KILL_FOR_BEER, null );
+        	preferences.put( JIRA_BEER_TIME, null );
+        }
         
         return preferencesExist;
     }
@@ -280,7 +292,10 @@ public class Preferences implements Serializable
      */
     public String getCurrentProject()
     {
-    	return (String)preferences.get( JIRA_CURRENT_PROJECT );
+		String result = (preferences.get( JIRA_CURRENT_PROJECT ) == null) ? ""
+		                                                                  : (String)preferences.get( JIRA_CURRENT_PROJECT );
+		
+    	return result;
     }
     
     /**
@@ -305,7 +320,9 @@ public class Preferences implements Serializable
 	 */
 	public boolean getKillOnBeer()
     {
-	    return (Boolean)preferences.get( JIRA_KILL_FOR_BEER );
+		boolean result = (preferences.get( JIRA_KILL_FOR_BEER ) == null) ? false
+		                                                                 : (Boolean)preferences.get( JIRA_KILL_FOR_BEER );
+	    return result;
     }
     
 	/**
@@ -313,7 +330,8 @@ public class Preferences implements Serializable
 	 */
 	public DateTime getBeerTime()
 	{
-		String dateString = (String)preferences.get( JIRA_BEER_TIME );
+		String dateString = (preferences.get( JIRA_BEER_TIME ) == null) ? null
+			                                                            : (String)preferences.get( JIRA_BEER_TIME );
 		
 		if( dateString == null )
 			dateString = "5 15 59";

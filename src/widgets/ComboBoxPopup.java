@@ -2,6 +2,7 @@ package widgets;
 
 import java.awt.Component;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
@@ -33,6 +34,19 @@ public class ComboBoxPopup extends JComboBox<String>
 		setRenderer( new ComboBoxPopupRenderer() );
 	}
 
+	/**
+	 * Use this to set the underlying model for the combo.  It should redraw the combo with the
+	 * new values.
+	 * 
+	 * @param items The items displayed in the combo.
+	 * @param tooltips The corresponding tooltips (Jira descriptions) for each combo item.
+	 */
+	public void setModel( String[] items, String[] tooltips )
+	{
+		super.setModel( new DefaultComboBoxModel<String>( items ) );
+		this.tooltips = tooltips;
+	}
+	
 	/**
 	 * This class provides the renderer to put the JIRA task in the JComboBox and the task
 	 * description in as a tooltip.

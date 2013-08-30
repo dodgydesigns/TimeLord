@@ -329,11 +329,13 @@ public class SqlInterface
      * Keep a running total of the time spent on tasks today. This can also then
      * be used to calculate the time spent on tasks this week.
      * 
+     * @param The day to get data for.
+     * 
      * @return The total time spent on tasks today.
      */
-    public Period getTodayTally()
+    public Period getTodayTally( DateTime date )
     {
-    	return getTallyForDate( new DateTime() );
+    	return getTallyForDate( date );
     }
     
     /**

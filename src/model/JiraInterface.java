@@ -225,8 +225,7 @@ public class JiraInterface
         }
         catch( XmlRpcException e )
         {
-	        // TODO Auto-generated catch block
-	        e.printStackTrace();
+        	// logger
         }
 
         projects = new HashMap<String,String>();
@@ -259,7 +258,8 @@ public class JiraInterface
 
         if ( loginToken != null )
         {
-            Object[] issues = (Object[]) rpcClient.execute( "jira1.getIssuesFromTextSearch", parameters );
+            Object[] issues = (Object[]) rpcClient.execute( "jira1.getIssuesFromTextSearch", 
+                                                            parameters );
 
             // Add matched results to returnArray and print them out.
             for ( int i = 0; i < issues.length; i++ )
@@ -334,8 +334,7 @@ public class JiraInterface
         {
             if ( (Boolean) rpcClient.execute( "jira1.logout", loginTokenVector ) )
             {
-                Logger.getLogger( "TimeLord" ).info(
-                        "Could not log out of JIRA" );
+                Logger.getLogger( "TimeLord" ).info( "Could not log out of JIRA" );
             }
 
         }

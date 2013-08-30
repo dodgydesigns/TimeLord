@@ -40,7 +40,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.concurrent.Semaphore;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -137,6 +136,7 @@ public class View extends JFrame implements ActionListener
         setBackground( new Color( 85, 91, 106 ) );
         setPreferredSize( new Dimension(700, 700) );
         setResizable( false );
+		setLocation( 50, 50 );
         
 		addWindowListener( new WindowAdapter()
 		{
@@ -238,6 +238,10 @@ public class View extends JFrame implements ActionListener
         
         // Table
         drawTaskTable();
+        
+        // Combo
+        if( jiraComboBox == null )
+        	jiraComboBox = new ComboBoxPopup( new String[]{""}, new String[]{""} );
 
         // Progress bar
         weekProgressBar = new JProgressBar();
@@ -296,7 +300,6 @@ public class View extends JFrame implements ActionListener
 
         add( mainContainer );
         pack();
-        setLocationRelativeTo( null );
         descriptionTextArea.requestFocus();
         descriptionTextArea.setCaretPosition( 0 );
     }
@@ -412,8 +415,14 @@ public class View extends JFrame implements ActionListener
 	/**
 	 * @param issues
 	 */
-	public void setJiraComboBox( ArrayList<String[]> issues )
+	public void setJiraComboBox()
     {
+        // If the ComboPopupBox hasn't been created yet, do it ready to fill from setModel(...).
+        jiraComboBox = new ComboBoxPopup( new String[]{""}, new String[]{""} );
+        
+        // Get the issues from the Jira server
+		ArrayList<String[]> issues = controller.getJiraIssues();
+		
 		if( issues != null )
 		{
             String[][] jiraData = new String[2][issues.size()];
@@ -425,13 +434,17 @@ public class View extends JFrame implements ActionListener
                 jiraData[1][i] = entries[2];
                 i++;
             }
-    
-            jiraComboBox = new ComboBoxPopup( jiraData[0], jiraData[1] );
+//            jiraComboBox.setModel( jiraData[0], jiraData[1] );
+            jiraComboBox= new ComboBoxPopup( jiraData[0], jiraData[1] );
 		}
 		else
 			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
+//			jiraComboBox.setModel( new String[1], new String[1] );
 		
         jiraComboBox.setPreferredSize( new Dimension(150, 28) );
+//        jiraComboBox.invalidate();
+//        jiraComboBox.validate();
+        jiraComboBox.repaint();
     }   
     
     /**
@@ -534,8 +547,7 @@ public class View extends JFrame implements ActionListener
             }
             else if( source == configButton )
             {
-            	Semaphore semaphore = new Semaphore( 1 );
-                JDialog configDialog = new Configuration( controller, semaphore );
+                JDialog configDialog = new Configuration( controller, getLocationOnScreen() );
                 configDialog.setVisible( true );
             }
         }
@@ -544,8 +556,7 @@ public class View extends JFrame implements ActionListener
         {
             if( e.getActionCommand().equalsIgnoreCase( "preferences" ) )
             {
-            	Semaphore semaphore = new Semaphore( 1 );
-                JDialog configDialog = new Configuration( controller, semaphore );
+                JDialog configDialog = new Configuration( controller, getLocation() );
                 configDialog.setVisible( true );
             }
             else if( e.getActionCommand().equalsIgnoreCase( "quit" ) )
