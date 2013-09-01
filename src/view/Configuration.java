@@ -257,6 +257,7 @@ public class Configuration extends JDialog implements ActionListener
         
         // Buttons
         JButton tryButton = new JButton( "Try..." );
+        tryButton.setBackground( null );
         tryButton.addActionListener( this );
         JButton backupDBButton = new JButton( "Backup" );
         backupDBButton.addActionListener( this );

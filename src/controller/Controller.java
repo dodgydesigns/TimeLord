@@ -476,11 +476,12 @@ public class Controller
     	DateTime selectedDate = getCurrentDateTime().plusDays( dayOffset );
     	setDateLabel( selectedDate );
     	String selectedDateString = Time.getReferableDate( selectedDate );
+    	
     	String[] colHeaders = getDatabase().getColumnHeaders();
         String[][] selectedDateIssues = null;
         try
         {
-            selectedDateIssues = getDatabase().getEntriesByDate( selectedDateString );
+            selectedDateIssues = database.getEntriesByDate( selectedDateString );
         }
         catch( SQLException e1 )
         {

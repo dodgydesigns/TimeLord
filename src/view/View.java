@@ -190,17 +190,19 @@ public class View extends JFrame implements ActionListener
         startStopButton.setEnabled( false );
         startStopButton.setIcon( new ImageIcon(getClass().getResource("/media/startbutton.png")) );
         startStopButton.setSelectedIcon( new ImageIcon(getClass().getResource("/media/stopbutton.png")) );
-        startStopButton.setBorderPainted( false );
-        startStopButton.setBackground( null );
+        startStopButton.setDisabledIcon( new ImageIcon(getClass().getResource("/media/startbuttondiabled.png")) );
+        startStopButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/startbuttondiabled.png")) );
         startStopButton.setBorder( null );
         startStopButton.setBackground( Color.WHITE );
         startStopButton.addActionListener( this );
         
         notWorkRadioButton = new JRadioButton( "Not Work" );
+        notWorkRadioButton.setBackground( null );
         notWorkRadioButton.setOpaque( false );
         notWorkRadioButton.addActionListener( this );
         
         notJiraRadioButton = new JRadioButton( "Not JIRA" );
+        notJiraRadioButton.setBackground( null );
         notJiraRadioButton.setOpaque( false );
         notJiraRadioButton.addActionListener( this );
         
@@ -229,6 +231,7 @@ public class View extends JFrame implements ActionListener
         reportButton.addActionListener( this );
 
         clearDescriptionButton = new JButton("X");
+        clearDescriptionButton.setBackground( null );
         clearDescriptionButton.setForeground( Color.WHITE );
         clearDescriptionButton.setBorder( null );
         clearDescriptionButton.addActionListener( this );
@@ -266,7 +269,7 @@ public class View extends JFrame implements ActionListener
                                                            "10[]20[200]150[]20[]10[grow][]", 
                                                     	   "2[][grow]2" ) );
         dataEntryPanel.add( startStopButton );
-        dataEntryPanel.add( timeLabel, "aligny 45%, hmax 30" );
+        dataEntryPanel.add( timeLabel, "aligny 45%, hmax 35" );
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
         dataEntryPanel.add( notJiraRadioButton );
         dataEntryPanel.add( taskIconLabel );
@@ -443,7 +446,7 @@ public class View extends JFrame implements ActionListener
 		
         jiraComboBox.setPreferredSize( new Dimension(150, 28) );
 //        jiraComboBox.invalidate();
-//        jiraComboBox.validate();
+//        jiraComboBox.validate();TODO: try and fix this
         jiraComboBox.repaint();
     }   
     
