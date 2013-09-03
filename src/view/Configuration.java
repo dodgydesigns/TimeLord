@@ -22,6 +22,7 @@ package view;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridBagLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -103,7 +104,7 @@ public class Configuration extends JDialog implements ActionListener
 	private Map<String, String> projects;
 
 	private SwingWorker<Boolean,Void> jiraAttemptWorker;
-	private SwingWorker<Boolean,Void> jiraIssuesWorker;
+	private SwingWorker<Void,Void> jiraIssuesWorker;
 
 	private Point locationOnScreen;
 
@@ -319,6 +320,37 @@ public class Configuration extends JDialog implements ActionListener
     }
 
     /**
+     * This method will add an animated scroll wheel to the glass pane of the configuration
+     * panel when required.  When the lengthy process is complete, the glasspane is cleared.
+     * 
+     * @param visible  Whether the glasspane (and thus scroll wheel) should be visible.
+     */
+    private void engageScrollWheel( final boolean visible )
+    {
+    	final JPanel glassPane = (JPanel)this.getGlassPane();
+		final JLabel spinLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
+			  "scrollwheel.gif" 
+			) ) );	
+		
+    	SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+		    	glassPane.setLayout( new GridBagLayout() );
+		    	
+		    	if( visible )
+		    		glassPane.add( spinLabel );
+		    	else
+		    		glassPane.removeAll();
+		    	
+		    	glassPane.setVisible( visible );				
+			}
+		} );
+    }
+    
+    /**
      * Get the settings just entered and try to connect to JIRA server.  This could take a while
      * so put it in a worker thread.
      */
@@ -332,6 +364,7 @@ public class Configuration extends JDialog implements ActionListener
     		@Override
     		protected Boolean doInBackground() throws Exception
     		{
+    			engageScrollWheel( true );
     	    	connected = jiraInterface.connectToJira();
 
     			return connected;
@@ -342,6 +375,7 @@ public class Configuration extends JDialog implements ActionListener
 			{
 				if( connected )
 				{
+					engageScrollWheel( false );
 					tryJIRASettingsLabel.setText( "Success!" );
 					tryJIRASettingsLabel.setForeground( new Color( 100, 255, 100 ) );
 
@@ -369,6 +403,38 @@ public class Configuration extends JDialog implements ActionListener
 		jiraAttemptWorker.execute();
     }
 
+	/**
+	 * When the ok button is pressed, the Jira issues for the chosen project must be retrieved
+	 * which can take some time.  The scroll wheel will be displayed while this happens and once
+	 * complete, the dialog is dismissed.
+	 */
+	private void okButtonPressed()
+	{
+    	setPreferenceValues();
+
+    	jiraIssuesWorker = new SwingWorker<Void,Void>()
+    	{
+    		@Override
+    		protected Void doInBackground() throws Exception
+    		{
+    			engageScrollWheel( true );
+    			System.out.println("wheel up");
+    			preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
+    			view.setJiraComboBox();
+    			System.out.println("set combo");
+    			return null;
+    		}
+
+			// Can safely update the GUI from this method.
+			protected void done()
+			{
+				returnToMainWindow();
+			}
+		};
+
+		jiraIssuesWorker.execute();
+	}
+	
 	/**
 	 * This method drops the database thereby clearing any data contained in it.
 	 * 
@@ -467,46 +533,6 @@ public class Configuration extends JDialog implements ActionListener
 				preferences.setConnectToJiraAtStartup( connectToJira.isSelected() );
 		}
     }
-		
-	private void okButtonPressed()
-	{
-    	setPreferenceValues();
-    	// Set this now that they've selected a project
-        preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
-
-//		// This could take ages
-//		jiraIssuesWorker = new SwingWorker<Boolean,Void>()
-//		{
-//			@Override
-//			protected Boolean doInBackground() throws Exception
-//			{
-				view.setJiraComboBox();
-//
-//				return connected;
-//			}
-//
-//			// Can safely update the GUI from this method.
-//			protected void done()
-//			{
-//				if( connected )
-//				{
-//
-//				}
-//				else
-//				{
-//
-//				}
-//			}
-//		};
-//
-//		jiraIssuesWorker.execute();
-		
-
-        if( jiraAttemptWorker != null && !jiraAttemptWorker.isDone() )
-        	jiraAttemptWorker.cancel( true );
-        
-        returnToMainWindow();
-	}
 	
 	/**
 	 * Close this dialog and return to the main window.
