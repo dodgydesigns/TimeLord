@@ -59,6 +59,7 @@ import javax.swing.JTextArea;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
@@ -75,7 +76,7 @@ import widgets.LimitedLinesDocument;
 import widgets.MultiLineCellRenderer;
 import controller.Controller;
 
-public class View extends JFrame implements ActionListener
+public class MainView extends JFrame implements ActionListener
 {
     //----------------------------------------------------------
     //                    STATIC VARIABLES
@@ -87,30 +88,38 @@ public class View extends JFrame implements ActionListener
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
 	private JPanel dataDisplayPanel;
+	private JPanel topPanel;
+	private JPanel dataEntryPanel;
+	private JPanel mainContainer;
+	private JPanel bottomPanel;
+
+	private JLabel taskIconLabel;
+	private JLabel iconLabel;
     private JLabel dateLabel;
+	private JLabel beerLabel;
+	private JLabel timeLabel;
+	
     private JTable taskTable;
     private JTextArea descriptionTextArea;
+    private ComboBoxPopup jiraComboBox;
+    private JProgressBar weekProgressBar;
+    
     private JButton reportButton;
     private JButton configButton;
     private JButton dayBackButton;
     private JButton dayForwardButton;
-    private ComboBoxPopup jiraComboBox;
+    private JButton quitButton;
+	private JButton clearDescriptionButton;
     private JRadioButton notJiraRadioButton;
     private JRadioButton notWorkRadioButton;
-    private JButton quitButton;
     private JToggleButton startStopButton;
-    private JProgressBar weekProgressBar;
     
     private Controller controller;
-	private JLabel beerLabel;
-	private JPanel bottomPanel;
-	private JLabel timeLabel;
-	private JButton clearDescriptionButton;
-    
+
     //----------------------------------------------------------
     //                      CONSTRUCTORS
     //----------------------------------------------------------
-    public View()
+    public MainView()
     {
     }
     
@@ -122,6 +131,9 @@ public class View extends JFrame implements ActionListener
         this.controller = controller;
     }
 
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// User Interface /////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Instantiate all the GUI components.
      * 
@@ -149,10 +161,10 @@ public class View extends JFrame implements ActionListener
 		} );
 		
         // Menu
-        drawMenu();
+        drawMenuBar();
 
         // Labels
-        JLabel iconLabel = new JLabel();
+        iconLabel = new JLabel();
         iconLabel.setIcon( new ImageIcon(getClass().getResource("/media/timelord logo.png")) );
 
         dateLabel = new JLabel();
@@ -162,9 +174,8 @@ public class View extends JFrame implements ActionListener
         timeLabel = new JLabel();
         timeLabel.setFont( new Font( "Lucida Grande", 1, 36 ) );
 
-        JLabel taskIconLabel = new JLabel( "JIRA:" );
-        taskIconLabel.setIcon( new ImageIcon( getClass().getResource(
-                "/media/jiraicon.png" ) ) );
+        taskIconLabel = new JLabel( "JIRA:" );
+        taskIconLabel.setIcon( new ImageIcon( getClass().getResource( "/media/jiraicon.png" ) ) );
 
         beerLabel = new JLabel();
         beerLabel.setIcon( new ImageIcon( getClass().getResource( "/media/beer.png" ) ) );
@@ -252,22 +263,41 @@ public class View extends JFrame implements ActionListener
         weekProgressBar.setMinimum( 1 );
         weekProgressBar.setValue( new DateTime().getDayOfWeek() );
 
-        // Now put it all together
         // Panels
-        JPanel mainContainer = new JPanel( new MigLayout( "", 
-                                                          "5[grow]5",
-                                                          "0[20][][300, grow][]0" ) );
+        topPanel = new JPanel( new MigLayout( "", "[]0[][300][]", "[]" ) );
+        dataEntryPanel = new JPanel( new MigLayout( "", 
+                                                    "10[]20[200]150[]20[]10[grow][]", 
+                                                    "2[][grow]2" ) );
+        TitledBorder border = BorderFactory.createTitledBorder( null, 
+                                                                "Task Details", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        dataEntryPanel.setBorder( border );
+        dataEntryPanel.setBackground( new Color( 115, 121, 136 ) );
 
-        JPanel topPanel = new JPanel( new MigLayout( "", "[]0[][300][]", "[]" ) );
+        mainContainer = new JPanel( new MigLayout( "", 
+                                                   "5[grow]5",
+                                                   "0[20][][300, grow][]0" ) );
+        bottomPanel = new JPanel( new MigLayout( "",
+                                                 "20[grow]10[]20[]20[]20[]20",
+                                                 "2[]0[]10" ) );
+        bottomPanel.setBackground( new Color( 85, 91, 106 ) );        
+    }
+
+    /**
+     * Layout all the GUI components in the dialog.
+     */
+    public void layoutComponents()
+    {
         topPanel.add( iconLabel, "" );
         topPanel.add( dayBackButton, "" );
         topPanel.add( dateLabel, "grow" );
         topPanel.add( dayForwardButton, "" );
         topPanel.setBackground( new Color( 85, 91, 106 ) );
 
-        JPanel dataEntryPanel = new JPanel( new MigLayout( "", 
-                                                           "10[]20[200]150[]20[]10[grow][]", 
-                                                    	   "2[][grow]2" ) );
+
         dataEntryPanel.add( startStopButton );
         dataEntryPanel.add( timeLabel, "aligny 45%, hmax 35" );
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
@@ -276,41 +306,42 @@ public class View extends JFrame implements ActionListener
         dataEntryPanel.add( jiraComboBox, "wrap, hmax 28" );
         dataEntryPanel.add( descriptionTextArea, "span 5, grow, hmax 100" );
         dataEntryPanel.add( clearDescriptionButton, "hmax 100" );
-        dataEntryPanel.setBackground( new Color( 115, 121, 136 ) );
-        TitledBorder border = BorderFactory.createTitledBorder( null, 
-                                                                "Task Details", 
-                                                                TitledBorder.LEFT, 
-                                                                TitledBorder.TOP, 
-                                                                new Font( "Lucida Grande", 1, 12 ), 
-                                                                Color.WHITE );
-        dataEntryPanel.setBorder( border );
-
-        bottomPanel = new JPanel( new MigLayout( "",
-                                                 "20[grow]10[]20[]20[]20[]20",
-                                                 "2[]0[]10" ) );
 
         bottomPanel.add( weekProgressBar, "grow, hmax 28" );
         bottomPanel.add( beerLabel );
         bottomPanel.add( reportButton );
         bottomPanel.add( configButton );
         bottomPanel.add( quitButton );
-        bottomPanel.setBackground( new Color( 85, 91, 106 ) );
 
         mainContainer.add( topPanel, "grow, wrap" );
         mainContainer.add( dataEntryPanel, "grow, wrap" );
         mainContainer.add( dataDisplayPanel, "grow, wrap" );
         mainContainer.add( bottomPanel, "grow" );
-
+        
         add( mainContainer );
-        pack();
-        descriptionTextArea.requestFocus();
-        descriptionTextArea.setCaretPosition( 0 );
     }
-
+    
+	/**
+	 * Display the main TimeLord window.
+	 */
+	public void showDialog()
+    {
+		SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+				pack();
+				setVisible( true );
+			}
+		} );
+    }
+	
 	/**
      * Create all the menu headings and menu items available for TimeLord.
      */
-    private void drawMenu()
+    private void drawMenuBar()
     {
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar( menuBar );
@@ -422,7 +453,7 @@ public class View extends JFrame implements ActionListener
     {
         // If the ComboPopupBox hasn't been created yet, do it ready to fill from setModel(...).
         jiraComboBox = new ComboBoxPopup( new String[]{""}, new String[]{""} );
-        
+
         // Get the issues from the Jira server
 		ArrayList<String[]> issues = controller.getJiraIssues();
 		
@@ -437,17 +468,26 @@ public class View extends JFrame implements ActionListener
                 jiraData[1][i] = entries[2];
                 i++;
             }
-//            jiraComboBox.setModel( jiraData[0], jiraData[1] );
-            jiraComboBox= new ComboBoxPopup( jiraData[0], jiraData[1] );
+            jiraComboBox.setModel( jiraData[0], jiraData[1] );
+//            jiraComboBox= new ComboBoxPopup( jiraData[0], jiraData[1] );
 		}
 		else
-			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
-//			jiraComboBox.setModel( new String[1], new String[1] );
-		
-        jiraComboBox.setPreferredSize( new Dimension(150, 28) );
-//        jiraComboBox.invalidate();
-//        jiraComboBox.validate();TODO: try and fix this
-        jiraComboBox.repaint();
+//			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
+			jiraComboBox.setModel( new String[1], new String[1] );
+
+		SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+			       jiraComboBox.setPreferredSize( new Dimension(150, 28) );
+			        jiraComboBox.invalidate();
+			        jiraComboBox.validate();
+			        jiraComboBox.repaint();
+			        jiraComboBox.setVisible( true );
+			}
+		} );
     }   
     
     /**
@@ -464,6 +504,8 @@ public class View extends JFrame implements ActionListener
         descriptionTextArea.setForeground( Color.LIGHT_GRAY );
         descriptionTextArea.setText( "Enter task description..." );
         descriptionTextArea.setBackground( new Color(125, 131, 146) );
+        descriptionTextArea.requestFocus();
+        descriptionTextArea.setCaretPosition( 0 );
         
         descriptionTextArea.addKeyListener( new KeyListener()
         {
@@ -514,6 +556,9 @@ public class View extends JFrame implements ActionListener
         dateLabel.setText( date );
     }
    
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// Action Handlers ////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Grab all the GUI events and handle them appropriately.
      */
@@ -530,11 +575,11 @@ public class View extends JFrame implements ActionListener
             }
             else if( source == dayBackButton )
             {
-            	controller.dayButtonAction( -1 );
+            	controller.incrementDecrementDay( -1 );
             }
             else if( source == dayForwardButton )
             {
-            	controller.dayButtonAction( +1);
+            	controller.incrementDecrementDay( +1);
             }
             else if( source == clearDescriptionButton )
             {
@@ -676,7 +721,6 @@ public class View extends JFrame implements ActionListener
 		this.startStopButton = startStopButton;
 	}
 
-	
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------

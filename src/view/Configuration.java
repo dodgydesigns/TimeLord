@@ -83,10 +83,18 @@ public class Configuration extends JDialog implements ActionListener
 	//----------------------------------------------------------
 	//                   INSTANCE VARIABLES
 	//----------------------------------------------------------
-
+	private JPanel databasePanel;
+	private JPanel beerPanel;
+	private JPanel jiraPanel;
     private JTextField urlTextField;
     private JTextField usernaneTextField;
     private JPasswordField passwordPasswordField;
+	private JButton tryButton;
+	private JButton backupDBButton;
+	private JButton restoreDBButton;
+	private JButton clearDBButton;
+	private JButton cancelButton;
+	private JButton okButton;
     private JComboBox<String> projectCombo;
 	private JComboBox<String> alarmDay;
 	private JComboBox<String> alarmHour;
@@ -94,8 +102,9 @@ public class Configuration extends JDialog implements ActionListener
 	private JCheckBox killOnAlarm;
     private JCheckBox connectToJira;
     private JLabel tryJIRASettingsLabel;
-    
-    private view.View view;
+	private JLabel logoLabel;
+
+    private view.MainView view;
     private Preferences preferences;
     private SqlInterface database;
 
@@ -105,9 +114,6 @@ public class Configuration extends JDialog implements ActionListener
 
 	private SwingWorker<Boolean,Void> jiraAttemptWorker;
 	private SwingWorker<Void,Void> jiraIssuesWorker;
-
-	private Point locationOnScreen;
-
 	//----------------------------------------------------------
 	//                      CONSTRUCTORS
 	//----------------------------------------------------------
@@ -119,33 +125,19 @@ public class Configuration extends JDialog implements ActionListener
         this.preferences = controller.getPreferences();
         this.database = controller.getDatabase();
         this.jiraInterface = controller.getJiraInterface();
-        this.locationOnScreen = locationOnScreen;
         
         initComponents();
         loadPreferences();
+        layoutComponents();
+        showConfiguration();
     }
 
 	//----------------------------------------------------------
 	//                    INSTANCE METHODS
 	//----------------------------------------------------------
-    /**
-     * Read the preferences from disk and fill the text fields with the
-     * appropriate data.
-     */
-    private void loadPreferences()
-    {
-    	connectToJira.setSelected( preferences.connectToJiraAtStartup() );
-    	urlTextField.setText( preferences.getJiraUrl() );
-        passwordPasswordField.setText( preferences.getPassword() );
-        usernaneTextField.setText( preferences.getUserName() );
-        
-        DateTime alarmTime = preferences.getBeerTime();
-        alarmDay.setSelectedIndex( alarmTime.getDayOfWeek() - 1 );
-        alarmHour.setSelectedItem( String.valueOf(alarmTime.getHourOfDay()) );
-        alarmMinute.setSelectedItem( String.valueOf(alarmTime.getMinuteOfHour()) );
-        killOnAlarm.setSelected( preferences.getKillOnBeer() );
-    }
-    
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// User Interface /////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Create and layout the UI components.
      */
@@ -172,7 +164,7 @@ public class Configuration extends JDialog implements ActionListener
         getContentPane().setBackground( Color.LIGHT_GRAY );
 
         // Panels
-        JPanel jiraPanel = new JPanel( new MigLayout( "", "[][grow]", "[shrink 0][shrink 0]" ) );
+        jiraPanel = new JPanel( new MigLayout( "", "[][grow]", "[shrink 0][shrink 0]" ) );
         TitledBorder border = BorderFactory.createTitledBorder( null, 
                                                                 "Jira", 
                                                                 TitledBorder.LEFT, 
@@ -182,7 +174,7 @@ public class Configuration extends JDialog implements ActionListener
         jiraPanel.setBorder( border );
         jiraPanel.setBackground( new Color( 115, 121, 136 ) );
         
-        JPanel databasePanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
+        databasePanel = new JPanel( new MigLayout( "", "[][grow]", "[][shrink 0]" ) );
         border = BorderFactory.createTitledBorder( null, 
                                                    "Database", 
                                                    TitledBorder.LEFT, 
@@ -192,7 +184,7 @@ public class Configuration extends JDialog implements ActionListener
         databasePanel.setBorder( border );
         databasePanel.setBackground( new Color( 115, 121, 136 ) );
 
-        JPanel beerPanel = new JPanel( new MigLayout( "", "[]", "[]" ) );
+        beerPanel = new JPanel( new MigLayout( "", "[]", "[]" ) );
         border = BorderFactory.createTitledBorder( null, 
                                                    "Alarm Settings", 
                                                    TitledBorder.LEFT, 
@@ -226,8 +218,8 @@ public class Configuration extends JDialog implements ActionListener
     	alarmMinute.setSelectedItem( "00" );
     	
         // Labels
-		JLabel logoLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
-																			  "timelord logo.png" 
+		logoLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
+																	   "timelord logo.png" 
 																			) ) );
 		tryJIRASettingsLabel = new JLabel( "<html><font color='white'>Try to connect using " +
 										   "current settings:" );
@@ -257,20 +249,26 @@ public class Configuration extends JDialog implements ActionListener
         killOnAlarm.addActionListener( this );
         
         // Buttons
-        JButton tryButton = new JButton( "Try..." );
+        tryButton = new JButton( "Try..." );
         tryButton.setBackground( null );
         tryButton.addActionListener( this );
-        JButton backupDBButton = new JButton( "Backup" );
+        backupDBButton = new JButton( "Backup" );
         backupDBButton.addActionListener( this );
-        JButton restoreDBButton = new JButton( "Restore" );
+        restoreDBButton = new JButton( "Restore" );
         restoreDBButton.addActionListener( this );
-        JButton clearDBButton = new JButton( "Clear" );
+        clearDBButton = new JButton( "Clear" );
         clearDBButton.addActionListener( this );
-        JButton cancelButton = new JButton( "Cancel" );
+        cancelButton = new JButton( "Cancel" );
         cancelButton.addActionListener( this );
-        JButton okButton = new JButton( "OK" );
+        okButton = new JButton( "OK" );
         okButton.addActionListener( this );
+    }
 
+    /**
+     * Layout all the GUI elements on the dialog.
+     */
+    private void layoutComponents()
+    {
         jiraPanel.add( connectToJira );
         jiraPanel.add( new JLabel( "<html><font color='white'>Connect to Jira at startup</font>" ), 
                        "wrap, span, grow" );
@@ -305,7 +303,13 @@ public class Configuration extends JDialog implements ActionListener
         add( cancelButton, "right, width 80:80:80," );
         add( okButton, "right, width 80:80:80," );
 		setLocation( 50, 50 );
-
+    }
+    
+    /**
+     * Display the configuration dialog from the event dispatch thread.
+     */
+    private void showConfiguration()
+    {
         SwingUtilities.invokeLater( new Runnable()
 		{
 			
@@ -318,43 +322,14 @@ public class Configuration extends JDialog implements ActionListener
 		} );
         urlTextField.requestFocus();
     }
-
-    /**
-     * This method will add an animated scroll wheel to the glass pane of the configuration
-     * panel when required.  When the lengthy process is complete, the glasspane is cleared.
-     * 
-     * @param visible  Whether the glasspane (and thus scroll wheel) should be visible.
-     */
-    private void engageScrollWheel( final boolean visible )
-    {
-    	final JPanel glassPane = (JPanel)this.getGlassPane();
-		final JLabel spinLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
-			  "scrollwheel.gif" 
-			) ) );	
-		
-    	SwingUtilities.invokeLater( new Runnable()
-		{
-			
-			@Override
-			public void run()
-			{
-		    	glassPane.setLayout( new GridBagLayout() );
-		    	
-		    	if( visible )
-		    		glassPane.add( spinLabel );
-		    	else
-		    		glassPane.removeAll();
-		    	
-		    	glassPane.setVisible( visible );				
-			}
-		} );
-    }
-    
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// Action Handlers ////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Get the settings just entered and try to connect to JIRA server.  This could take a while
      * so put it in a worker thread.
      */
-    private void tryButtonActionPerformed()
+    private void retrieveJiraProjects()
     {
     	setPreferenceValues();
 
@@ -364,7 +339,7 @@ public class Configuration extends JDialog implements ActionListener
     		@Override
     		protected Boolean doInBackground() throws Exception
     		{
-    			engageScrollWheel( true );
+    			displayScrollWheel( true );
     	    	connected = jiraInterface.connectToJira();
 
     			return connected;
@@ -375,7 +350,7 @@ public class Configuration extends JDialog implements ActionListener
 			{
 				if( connected )
 				{
-					engageScrollWheel( false );
+					displayScrollWheel( false );
 					tryJIRASettingsLabel.setText( "Success!" );
 					tryJIRASettingsLabel.setForeground( new Color( 100, 255, 100 ) );
 
@@ -408,7 +383,7 @@ public class Configuration extends JDialog implements ActionListener
 	 * which can take some time.  The scroll wheel will be displayed while this happens and once
 	 * complete, the dialog is dismissed.
 	 */
-	private void okButtonPressed()
+	private void acceptSettingsAndClose()
 	{
     	setPreferenceValues();
 
@@ -417,11 +392,12 @@ public class Configuration extends JDialog implements ActionListener
     		@Override
     		protected Void doInBackground() throws Exception
     		{
-    			engageScrollWheel( true );
-    			System.out.println("wheel up");
+    			displayScrollWheel( true );
+    			
     			preferences.setCurrentProject( (String)projectCombo.getSelectedItem() );
     			view.setJiraComboBox();
-    			System.out.println("set combo");
+    		
+    			// Don't care about return value
     			return null;
     		}
 
@@ -440,7 +416,7 @@ public class Configuration extends JDialog implements ActionListener
 	 * 
 	 * @param choice Whether the OK or Cancel button was clicked.
 	 */
-	private void clearButtonActionPerformed( int choice )
+	private void clearDatabase( int choice )
     {
     	// Destroy the database and all data.
         if( choice == JOptionPane.OK_OPTION )
@@ -459,27 +435,7 @@ public class Configuration extends JDialog implements ActionListener
             }        
         }
     }
-	
-    /**
-     * Write all the data entered into various fields to the preferences file.  This will only
-     * happen if a successful connection is made to the Jira server.
-     */
-    private void setPreferenceValues()
-    {        
-        char[] pw = passwordPasswordField.getPassword();
-        preferences.setPassword( String.valueOf( pw ) );
-        preferences.setUserName( usernaneTextField.getText() );
-        
-        String url = urlTextField.getText();
-        if( url.toLowerCase().startsWith( "http://" ) || url.toLowerCase().startsWith( "https://" ))
-        	preferences.setJiraUrl( urlTextField.getText() );
-        else
-        	preferences.setJiraUrl( "http://" + urlTextField.getText() );
-        
-        preferences.setBeerTime( alarmDay.getSelectedIndex() + " " +
-        						 alarmHour.getSelectedItem() + " " + 
-        						 alarmMinute.getSelectedItem() );
-    }
+
 
 	@Override
     public void actionPerformed( ActionEvent e )
@@ -492,7 +448,7 @@ public class Configuration extends JDialog implements ActionListener
 
 			if( buttonText.toLowerCase().equals( "try..." ) )
             {
-                tryButtonActionPerformed();
+                retrieveJiraProjects();
             }	
             if( buttonText.toLowerCase().equals( "backup" ) )
             {
@@ -513,11 +469,11 @@ public class Configuration extends JDialog implements ActionListener
                       									    JOptionPane.OK_CANCEL_OPTION,
                       								   	    JOptionPane.WARNING_MESSAGE,
                       									    null );  
-            	clearButtonActionPerformed( choice );            
+            	clearDatabase( choice );            
         	}
             if( buttonText.toLowerCase().equals( "ok" ) )
             {
-            	okButtonPressed();
+            	acceptSettingsAndClose();
             }
             if( buttonText.toLowerCase().equals( "cancel" ) )
             {
@@ -534,7 +490,49 @@ public class Configuration extends JDialog implements ActionListener
 		}
     }
 	
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// Utility Methods ////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * Read the preferences from disk and fill the text fields with the
+     * appropriate data.
+     */
+    private void loadPreferences()
+    {
+    	connectToJira.setSelected( preferences.connectToJiraAtStartup() );
+    	urlTextField.setText( preferences.getJiraUrl() );
+        passwordPasswordField.setText( preferences.getPassword() );
+        usernaneTextField.setText( preferences.getUserName() );
+        
+        DateTime alarmTime = preferences.getBeerTime();
+        alarmDay.setSelectedIndex( alarmTime.getDayOfWeek() - 1 );
+        alarmHour.setSelectedItem( String.valueOf(alarmTime.getHourOfDay()) );
+        alarmMinute.setSelectedItem( String.valueOf(alarmTime.getMinuteOfHour()) );
+        killOnAlarm.setSelected( preferences.getKillOnBeer() );
+    }
+    
 	/**
+     * Write all the data entered into various fields to the preferences file.  This will only
+     * happen if a successful connection is made to the Jira server.
+     */
+    private void setPreferenceValues()
+    {        
+        char[] pw = passwordPasswordField.getPassword();
+        preferences.setPassword( String.valueOf( pw ) );
+        preferences.setUserName( usernaneTextField.getText() );
+        
+        String url = urlTextField.getText();
+        if( url.toLowerCase().startsWith( "http://" ) || url.toLowerCase().startsWith( "https://" ))
+        	preferences.setJiraUrl( urlTextField.getText() );
+        else
+        	preferences.setJiraUrl( "http://" + urlTextField.getText() );
+        
+        preferences.setBeerTime( alarmDay.getSelectedIndex() + " " +
+        						 alarmHour.getSelectedItem() + " " + 
+        						 alarmMinute.getSelectedItem() );
+    }
+    
+    /**
 	 * Close this dialog and return to the main window.
 	 */
 	private void returnToMainWindow()
@@ -547,9 +545,50 @@ public class Configuration extends JDialog implements ActionListener
         }
         
     	// Show the main window again
-        view.setVisible( true );
-        view.pack();
+        SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+		        view.setVisible( true );
+		        view.pack();				
+			}
+		} );
+
 	}
+	
+    /**
+     * This method will add an animated scroll wheel to the glass pane of the configuration
+     * panel when required.  When the lengthy process is complete, the glasspane is cleared.
+     * 
+     * @param visible  Whether the glasspane (and thus scroll wheel) should be visible.
+     */
+    private void displayScrollWheel( final boolean visible )
+    {
+    	final JPanel glassPane = (JPanel)this.getGlassPane();
+		final JLabel spinLabel = new JLabel( new ImageIcon( getClass().getResource( "/media/" +
+			  "scrollwheel.gif" 
+			) ) );	
+		
+    	SwingUtilities.invokeLater( new Runnable()
+		{
+			
+			@Override
+			public void run()
+			{
+		    	glassPane.setLayout( new GridBagLayout() );
+		    	
+		    	if( visible )
+		    		glassPane.add( spinLabel );
+		    	else
+		    		glassPane.removeAll();
+		    	
+		    	glassPane.setVisible( visible );				
+			}
+		} );
+    }
+    
 	////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////

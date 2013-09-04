@@ -39,7 +39,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import view.Splash;
-import view.View;
+import view.MainView;
 import controller.Controller;
 
 /**
@@ -58,7 +58,7 @@ public class TimeLord
     // STATIC VARIABLES
     // ----------------------------------------------------------
 
-    private static View view;
+    private static MainView view;
 
     // ----------------------------------------------------------
     // INSTANCE VARIABLES
@@ -68,7 +68,7 @@ public class TimeLord
      */
     public static void main( String[] args )
     {
-        view = new View();
+        view = new MainView();
         new Controller( view );
         
         // Cobined with a commandline argument:
@@ -123,7 +123,7 @@ public class TimeLord
     private static void setWindowsLAF()
     {
         view.setIconImage( new javax.swing.ImageIcon(
-                View.class.getResource( "/media/icon.png" ) ).getImage() );
+                MainView.class.getResource( "/media/icon.png" ) ).getImage() );
 
         try
         {

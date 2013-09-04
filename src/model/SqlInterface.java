@@ -41,7 +41,7 @@ import org.joda.time.DateTime;
 import org.joda.time.MutableDateTime;
 import org.joda.time.Period;
 
-import view.View;
+import view.MainView;
 
 /**
  * This provides a wrapper for the SQLite database that forms the data
@@ -64,12 +64,12 @@ public class SqlInterface
     private PreparedStatement prep;
     private int taskCount;
     private String dbPath;
-    private View view;
+    private MainView view;
 
     //----------------------------------------------------------
     //                      CONSTRUCTORS
     //----------------------------------------------------------
-    public SqlInterface( View view ) throws Exception
+    public SqlInterface( MainView view ) throws Exception
     {
         this.view = view;
 

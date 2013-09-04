@@ -45,7 +45,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 
 import view.Configuration;
-import view.View;
+import view.MainView;
 
 public class Controller
 {
@@ -57,7 +57,7 @@ public class Controller
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
     //----------------------------------------------------------
-    private View view;
+    private MainView view;
     private SqlInterface database;
     private DefaultTableModel taskTableModel;
     private Preferences preferences;
@@ -73,7 +73,7 @@ public class Controller
     //----------------------------------------------------------
     //                      CONSTRUCTORS
     //----------------------------------------------------------
-    public Controller( View view )
+    public Controller( MainView view )
     {
         this.view = view;
         view.addListener( this );
@@ -148,24 +148,20 @@ public class Controller
      
         // Start drawing the GUI
         view.initComponents();
-    
+        view.layoutComponents();
+        view.showDialog();
+        
 		setDateLabel( new DateTime() );
 		setTimeLabel();
 		
         // Set the tally for today on the dayTallyLabel
         view.getBottomPanel().setBorder( setTallyBorder( new DateTime() ) );
-        
-		SwingUtilities.invokeLater( new Runnable()
-		{
-			
-			@Override
-			public void run()
-			{
-		        view.setVisible( true );				
-			}
-		} );
+        view.showDialog();
     }
  
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// User Interface /////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Set the date label depending on the date provided.
      * 
@@ -228,6 +224,89 @@ public class Controller
 		timer.scheduleAtFixedRate( dateUpdater, 0, 1000 );
 	}
 
+    
+    /**
+     * Get the time worked per day and week and set them as the title for a border.
+     * 
+     * @param The date to set the tally for.
+     * 
+     * @return A Border with the total time worked per day and week.
+     */
+    private TitledBorder setTallyBorder( DateTime thisDay )
+    {   
+        TitledBorder border = BorderFactory.createTitledBorder( null, 
+                                                                "Week: "  + 
+                                                                calculateWeekTally( thisDay ) + 
+                                                                "   Day: " + 
+                                                                calculateDayTally( thisDay ), 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        
+        return border;
+    }
+    
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// Action Handlers ////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
+    /**
+     * This method takes in the dateLabel from the GUI and advances or
+     * decrements it by one day for each time it is clicked.
+     * 
+     * @param Increment or decrement the date.
+     */
+	public void incrementDecrementDay( int direction )
+    {
+    	dayOffset += direction;
+    	DateTime selectedDate = getCurrentDateTime().plusDays( dayOffset );
+    	setDateLabel( selectedDate );
+    	String selectedDateString = Time.getReferableDate( selectedDate );
+    	
+    	String[] colHeaders = getDatabase().getColumnHeaders();
+        String[][] selectedDateIssues = null;
+        try
+        {
+            selectedDateIssues = database.getEntriesByDate( selectedDateString );
+        }
+        catch( SQLException e1 )
+        {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        
+        DefaultTableModel tableModel = new DefaultTableModel( selectedDateIssues,
+                                                              colHeaders );
+       	   
+        // Update the tally border
+        view.getBottomPanel().setBorder( setTallyBorder( selectedDate ) );
+
+        getView().getTaskTable().setModel( tableModel );
+        view.setupColumns();
+        
+        if( !recording )
+        {
+            getView().getStartStopButton().setEnabled( false );
+            getView().resetDescriptionTextfield();	
+        }
+    }
+
+	/**
+	 * Stop recording and exit.
+	 * @return 
+	 */
+	public int exitTimeLord()
+    {
+    	stopRecording();
+		System.exit( 0 );
+    	
+		// Amazing, we can never get to here
+    	return 0;
+    }
+	
+	////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////// Utility Methods ////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * This method determines whether it is Beer O' Clock (time to stop working for the week) and
      * if so, sets the alarm off.  If configured, the application will terminate at the chosen 
@@ -441,83 +520,7 @@ public class Controller
 
         return Time.displayDelta( tally );
     }
-    
-    /**
-     * Get the time worked per day and week and set them as the title for a border.
-     * 
-     * @param The date to set the tally for.
-     * 
-     * @return A Border with the total time worked per day and week.
-     */
-    private TitledBorder setTallyBorder( DateTime thisDay )
-    {   
-        TitledBorder border = BorderFactory.createTitledBorder( null, 
-                                                                "Week: "  + 
-                                                                calculateWeekTally( thisDay ) + 
-                                                                "   Day: " + 
-                                                                calculateDayTally( thisDay ), 
-                                                                TitledBorder.LEFT, 
-                                                                TitledBorder.TOP, 
-                                                                new Font( "Lucida Grande", 1, 12 ), 
-                                                                Color.WHITE );
-        
-        return border;
-    }
-    
-    /**
-     * This method takes in the dateLabel from the GUI and advances or
-     * decrements it by one day for each time it is clicked.
-     * 
-     * @param Increment or decrement the date.
-     */
-	public void dayButtonAction( int direction )
-    {
-    	dayOffset += direction;
-    	DateTime selectedDate = getCurrentDateTime().plusDays( dayOffset );
-    	setDateLabel( selectedDate );
-    	String selectedDateString = Time.getReferableDate( selectedDate );
-    	
-    	String[] colHeaders = getDatabase().getColumnHeaders();
-        String[][] selectedDateIssues = null;
-        try
-        {
-            selectedDateIssues = database.getEntriesByDate( selectedDateString );
-        }
-        catch( SQLException e1 )
-        {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        
-        DefaultTableModel tableModel = new DefaultTableModel( selectedDateIssues,
-                                                              colHeaders );
-       	   
-        // Update the tally border
-        view.getBottomPanel().setBorder( setTallyBorder( selectedDate ) );
 
-        getView().getTaskTable().setModel( tableModel );
-        view.setupColumns();
-        
-        if( !recording )
-        {
-            getView().getStartStopButton().setEnabled( false );
-            getView().resetDescriptionTextfield();	
-        }
-    }
-
-	/**
-	 * Stop recording and exit.
-	 * @return 
-	 */
-	public int exitTimeLord()
-    {
-    	stopRecording();
-		System.exit( 0 );
-    	
-		// Amazing, we can never get to here
-    	return 0;
-    }
-	
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -540,7 +543,7 @@ public class Controller
         return preferences;
     }
 
-    public View getView()
+    public MainView getView()
     {
         return view;
     }
@@ -578,14 +581,8 @@ public class Controller
 	{
 		this.selectedDate = currentDateTime;
 	}
-
-
-	
 	
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------
-
-
-
 }
