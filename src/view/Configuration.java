@@ -460,15 +460,18 @@ public class Configuration extends JDialog implements ActionListener
             }	
             if( buttonText.toLowerCase().equals( "clear" ) )
             {
+            	ImageIcon icon = new ImageIcon( this.getClass().getResource("/media/warning.png") );
             	int choice = JOptionPane.showConfirmDialog( (JFrame)view,
                                                             "Are you sure you want to clear " +
-                                                            "the database?",
+                                                            "the database?\n" +
                                                             "<html><FONT SIZE=\"5\" " +
                       				   					    "COLOR=\"FF0000\">All records " +
                       									    "will be deleted!</h1></html>", 
+            	                                            "Clear Database Data",
                       									    JOptionPane.OK_CANCEL_OPTION,
                       								   	    JOptionPane.WARNING_MESSAGE,
-                      									    null );  
+                      								   	 	icon);  
+            	
             	clearDatabase( choice );            
         	}
             if( buttonText.toLowerCase().equals( "ok" ) )
