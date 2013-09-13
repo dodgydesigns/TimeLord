@@ -41,7 +41,7 @@ public class ComboBoxPopup extends JComboBox<String>
 	 * @param items The items displayed in the combo.
 	 * @param tooltips The corresponding tooltips (Jira descriptions) for each combo item.
 	 */
-	public void setModel( String[] items, String[] tooltips )
+	public void setPopupComboModel( String[] items, String[] tooltips )
 	{
 		super.setModel( new DefaultComboBoxModel<String>( items ) );
 		this.tooltips = tooltips;

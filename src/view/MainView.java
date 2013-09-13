@@ -450,7 +450,7 @@ public class MainView extends JFrame implements ActionListener
 	 * @param issues
 	 */
 	public void setJiraComboBox()
-    {
+    {		
         // If the ComboPopupBox hasn't been created yet, do it ready to fill from setModel(...).
         jiraComboBox = new ComboBoxPopup( new String[]{""}, new String[]{""} );
 
@@ -468,26 +468,10 @@ public class MainView extends JFrame implements ActionListener
                 jiraData[1][i] = entries[2];
                 i++;
             }
-            jiraComboBox.setModel( jiraData[0], jiraData[1] );
-//            jiraComboBox= new ComboBoxPopup( jiraData[0], jiraData[1] );
+            jiraComboBox.setPopupComboModel( jiraData[0], jiraData[1] );
 		}
 		else
-//			jiraComboBox = new ComboBoxPopup( new String[1], new String[1] );
-			jiraComboBox.setModel( new String[1], new String[1] );
-
-		SwingUtilities.invokeLater( new Runnable()
-		{
-			
-			@Override
-			public void run()
-			{
-			       jiraComboBox.setPreferredSize( new Dimension(150, 28) );
-			        jiraComboBox.invalidate();
-			        jiraComboBox.validate();
-			        jiraComboBox.repaint();
-			        jiraComboBox.setVisible( true );
-			}
-		} );
+			jiraComboBox.setPopupComboModel( new String[1], new String[1] );
     }   
     
     /**
@@ -626,8 +610,7 @@ public class MainView extends JFrame implements ActionListener
             }
                 
             else if( e.getActionCommand().equalsIgnoreCase( "About Time:Lord" ) )
-//                System.out.println( "Item clicked: " + e.getActionCommand() );
-                new Splash( this );
+            	new About();
         }
         
         if( e.getSource() instanceof JToggleButton )

@@ -551,8 +551,8 @@ public class Configuration extends JDialog implements ActionListener
 			@Override
 			public void run()
 			{
+		        view.pack();		
 		        view.setVisible( true );
-		        view.pack();				
 			}
 		} );
 

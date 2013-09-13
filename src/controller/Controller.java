@@ -271,8 +271,11 @@ public class Controller
         }
         catch( SQLException e1 )
         {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+        	JOptionPane.showConfirmDialog( view, 
+        	                               "Could not connect to Jira server.  Please" +
+        	                               " check your login details and try again.",
+        	                               "Jira Connection", 
+        	                               JOptionPane.OK_OPTION );
         }
         
         DefaultTableModel tableModel = new DefaultTableModel( selectedDateIssues,
@@ -352,8 +355,11 @@ public class Controller
             }
             catch( XmlRpcException e )
             {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            	JOptionPane.showConfirmDialog( view, 
+            	                               "Could not connect to Jira server.  Please" +
+            	                               " check your login details and try again.",
+            	                               "Jira Connection", 
+            	                               JOptionPane.OK_OPTION );
             }
         }
         else
