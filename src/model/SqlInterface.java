@@ -32,6 +32,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
@@ -217,6 +219,55 @@ public class SqlInterface
     }
 
     /**
+     * Get all the issues for a specified period to display in a report.
+     * 
+     * @param startDate The start date of the period.
+     * @param endDate The end date of the period.
+     * 
+     * @return The total time spent on tasks this within the given period.
+     */
+    public String[][] getWeekEntries( DateTime startDate, DateTime endDate )
+    {
+        // Need mutable to perform arithmetic
+        MutableDateTime start = startDate.toMutableDateTime();
+        // Need mutable to perform arithmetic
+        MutableDateTime end = endDate.toMutableDateTime();
+        // Only have 'isBefore' so add one day to make it equivalent to
+        // 'isBeforeOrOnThisDay'
+        end.addDays( 1 );
+
+        List<String[]> weekEntries = new ArrayList<String[]>();
+        int runningCount = 0;
+        while ( start.isBefore( end ) )
+        {
+            try
+            {
+            	String date = Time.getReferableDate( start.toDateTime() );
+            	
+            	for( String[] dayEntries : getEntriesByDate(date) )
+            	{
+            		weekEntries.add( dayEntries );
+            		runningCount++;
+            	}
+            }
+            catch ( SQLException e )
+            {
+                e.printStackTrace();
+            }
+            start.addDays( 1 );
+        }
+
+        String[][] weekEntriesArray = new String[runningCount][6];
+        int counter = 0;
+        for( String[] entry : weekEntries )
+        {
+        	weekEntriesArray[counter] = entry;
+        	counter++;
+        }
+        return weekEntriesArray;
+    }
+    
+    /**
      * Return all entries filtered by the date of interest.
      * 
      * @param date The date to get entries for.
@@ -238,7 +289,7 @@ public class SqlInterface
         	tmpCounter++;
         }
 
-        String[][] tableData = new String[tmpCounter][5];
+        String[][] tableData = new String[tmpCounter][6];
 
         rs = statementHandler.executeQuery( "select * from timelord where date = '" + date + "';" );
         
@@ -255,6 +306,7 @@ public class SqlInterface
             
             tableData[taskCount][3] = rs.getString( "jira" );
             tableData[taskCount][4] = rs.getString( "description" );
+            tableData[taskCount][5] = rs.getString( "date" );
 
             taskCount++;
         }

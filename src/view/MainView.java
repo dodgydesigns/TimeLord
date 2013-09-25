@@ -82,7 +82,7 @@ public class MainView extends JFrame implements ActionListener
     //                    STATIC VARIABLES
     //----------------------------------------------------------
     private static final long serialVersionUID = -3317570506856865808L;
-    public static final int DESCRIPTION_COL_WIDTH = 314;
+    public static final int DESCRIPTION_COL_WIDTH = 350;
 
     //----------------------------------------------------------
     //                   INSTANCE VARIABLES
@@ -143,10 +143,10 @@ public class MainView extends JFrame implements ActionListener
     public void initComponents()
     {
         // Set defaults for this GUI element
-        // setDefaultCloseOperation(stopRecording());
+        setDefaultCloseOperation( controller.stopRecording() );
         setTitle( "TimeLord" );
         setBackground( new Color( 85, 91, 106 ) );
-        setPreferredSize( new Dimension(700, 700) );
+        setPreferredSize( new Dimension(720, 700) );
         setResizable( false );
 		setLocation( 50, 50 );
         
@@ -297,14 +297,13 @@ public class MainView extends JFrame implements ActionListener
         topPanel.add( dayForwardButton, "" );
         topPanel.setBackground( new Color( 85, 91, 106 ) );
 
-
         dataEntryPanel.add( startStopButton );
         dataEntryPanel.add( timeLabel, "aligny 45%, hmax 35" );
         dataEntryPanel.add( notWorkRadioButton, "split 2, flowy" );
         dataEntryPanel.add( notJiraRadioButton );
         dataEntryPanel.add( taskIconLabel );
         dataEntryPanel.add( jiraComboBox, "wrap, hmax 28" );
-        dataEntryPanel.add( descriptionTextArea, "span 5, grow, hmax 100" );
+        dataEntryPanel.add( descriptionTextArea, "span 5, hmax 25" );
         dataEntryPanel.add( clearDescriptionButton, "hmax 100" );
 
         bottomPanel.add( weekProgressBar, "grow, hmax 28" );
@@ -357,12 +356,9 @@ public class MainView extends JFrame implements ActionListener
 
         // Report menu
         JMenu reportMenu = new JMenu( "Report" );
-        JMenuItem byTaskMenuItem = new JMenuItem( "By Task..." );
+        JMenuItem byTaskMenuItem = new JMenuItem( "Generate Report" );
         byTaskMenuItem.addActionListener( this );
         reportMenu.add( byTaskMenuItem );
-        JMenuItem byWeekMenuItem = new JMenuItem( "By Week..." );
-        byWeekMenuItem.addActionListener( this );
-        reportMenu.add( byWeekMenuItem );
 
         // Help menu
         JMenu helpMenu = new JMenu( "Help" );
@@ -555,7 +551,7 @@ public class MainView extends JFrame implements ActionListener
         {   
             if( source == reportButton )
             {
-//                new Report( this ).setVisible( true );
+            	controller.generateReport();
             }
             else if( source == dayBackButton )
             {
@@ -599,16 +595,13 @@ public class MainView extends JFrame implements ActionListener
                 }
                 System.exit( 0 );
             }
-            else if( e.getActionCommand().equalsIgnoreCase( "by task..." ) )
-                System.out.println( "Item clicked: " + e.getActionCommand() );
-            else if( e.getActionCommand().equalsIgnoreCase( "by week..." ) )
-                System.out.println( "Item clicked: " + e.getActionCommand() );
+            else if( e.getActionCommand().equalsIgnoreCase( "Generate Report" ) )
+                controller.generateReport();
             else if( e.getActionCommand().equalsIgnoreCase( "timelord help" ) )
             {
             	URL resource = getClass().getResource( "/media/help/Welcome to Time.htm" );
             	BareBonesBrowserLaunch.openURL( resource.toString() );
             }
-                
             else if( e.getActionCommand().equalsIgnoreCase( "About Time:Lord" ) )
             	new About();
         }

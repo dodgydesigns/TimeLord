@@ -46,6 +46,8 @@ import org.joda.time.Period;
 
 import view.Configuration;
 import view.MainView;
+import view.ReportDialog;
+import widgets.ComboBoxPopup;
 
 public class Controller
 {
@@ -444,17 +446,19 @@ public class Controller
 
         taskCount++;
         recording = true;
+        view.getTaskTable().invalidate();
     }
     
     /**
      * When the recording is stopped, calculate the amount of time spent and
      * display with the stop time. This data is also added to the db and the the
      * day and week tally labels.
+     * @return 
      */
-    public void stopRecording()
+    public int stopRecording()
     {
     	if( !recording )
-    		return;
+    		return 0;
     	
         // Save the stop time
         final DateTime currentStopTime = new DateTime();
@@ -495,6 +499,8 @@ public class Controller
         }
 
         recording = false;
+        
+        return 0;
     }
 
     /**
@@ -527,6 +533,11 @@ public class Controller
         return Time.displayDelta( tally );
     }
 
+    public void generateReport()
+    {
+    	ReportDialog reportDialog = new ReportDialog( this );
+    	reportDialog.showDialog();
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// Accessor and Mutator Methods ///////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,6 +599,10 @@ public class Controller
 		this.selectedDate = currentDateTime;
 	}
 	
+	public ComboBoxPopup getJiraCombo()
+	{
+		return view.getJiraComboBox();
+	}
     //----------------------------------------------------------
     //                     INNER CLASSES
     //----------------------------------------------------------
