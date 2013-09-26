@@ -182,6 +182,7 @@ public class MainView extends JFrame implements ActionListener
 
         // Buttons
         dayBackButton = new JButton();
+        dayBackButton.setToolTipText( "Go back one day" );
         dayBackButton.setIcon( new ImageIcon(getClass().getResource("/media/bkbutton.png")) );
         dayBackButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/bkbuttonpressed.png")) );
         dayBackButton.setBorderPainted( false );
@@ -190,6 +191,7 @@ public class MainView extends JFrame implements ActionListener
         dayBackButton.addActionListener( this );
 
         dayForwardButton = new JButton();
+        dayForwardButton.setToolTipText( "Go forward one day" );
         dayForwardButton.setIcon( new ImageIcon(getClass().getResource("/media/fwdbutton.png")) );
         dayForwardButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/fwdbuttonpressed.png")) );
         dayForwardButton.setBorderPainted( false );
@@ -198,6 +200,7 @@ public class MainView extends JFrame implements ActionListener
         dayForwardButton.addActionListener( this );
         
         startStopButton = new JToggleButton();
+        startStopButton.setToolTipText( "Start/Stop recording" );
         startStopButton.setEnabled( false );
         startStopButton.setIcon( new ImageIcon(getClass().getResource("/media/startbutton.png")) );
         startStopButton.setSelectedIcon( new ImageIcon(getClass().getResource("/media/stopbutton.png")) );
@@ -218,6 +221,7 @@ public class MainView extends JFrame implements ActionListener
         notJiraRadioButton.addActionListener( this );
         
         quitButton = new JButton();
+        quitButton.setToolTipText( "Quit" );
         quitButton.setIcon( new ImageIcon(getClass().getResource("/media/powerbutton.png")) );
         quitButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/powerbuttonpressed.png")) );
         quitButton.setBorderPainted( false );
@@ -226,6 +230,7 @@ public class MainView extends JFrame implements ActionListener
         quitButton.addActionListener( this );
         
         configButton = new JButton();
+        configButton.setToolTipText( "Preferences" );
         configButton.setIcon( new ImageIcon( getClass().getResource("/media/configbutton.png")) );
         configButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/configurebuttonpressed.png")) );
         configButton.setBorderPainted( false );
@@ -234,6 +239,7 @@ public class MainView extends JFrame implements ActionListener
         configButton.addActionListener( this );
         
         reportButton = new JButton();
+        reportButton.setToolTipText( "Create Report" );
         reportButton.setIcon( new ImageIcon(getClass().getResource("/media/report.png")) );
         reportButton.setPressedIcon( new ImageIcon(getClass().getResource("/media/reportbuttonpressed.png")) );
         reportButton.setBorderPainted( false );
@@ -242,6 +248,7 @@ public class MainView extends JFrame implements ActionListener
         reportButton.addActionListener( this );
 
         clearDescriptionButton = new JButton("X");
+        clearDescriptionButton.setToolTipText( "Clear description" );
         clearDescriptionButton.setBackground( null );
         clearDescriptionButton.setForeground( Color.WHITE );
         clearDescriptionButton.setBorder( null );

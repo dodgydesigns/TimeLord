@@ -2,6 +2,7 @@ package view;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -17,14 +18,18 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -51,12 +56,12 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 	private JRadioButton taskRadioButton;
 	private JPanel bottomPanel;
 	private JButton printButton;
-	private JButton publishButton;
 	private JButton closeButton;
 	private JTable taskTable;
 	private ComboBoxPopup jiraComboBox;
 	private JLabel fromLabel;
 	private JLabel toLabel;
+	private JButton updateButton;
 
 	public ReportDialog( Controller controller )
 	{
@@ -88,17 +93,37 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 
 		// Panels
 		dataPanel = new JPanel();
-		dataPanel.setPreferredSize( new Dimension( 650, 100 ) );
-		dataPanel.setBorder( BorderFactory.createTitledBorder( "Data" ) );
-		dataPanel.add( taskTable );
+		dataPanel.setPreferredSize( new Dimension( 650, 440 ) );
+		dataPanel.setBackground( new Color( 115, 121, 136 ) );
+        TitledBorder border = BorderFactory.createTitledBorder( null, 
+                                                                "Data", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        dataPanel.setBorder( border );
 
 		buttonPanel = new JPanel();
+		buttonPanel.setBackground( new Color( 155, 161, 176 ) );
 		buttonPanel.setLayout( new GridBagLayout() );
-		buttonPanel.setBorder( BorderFactory.createTitledBorder( "Selection" ) );
+        border = BorderFactory.createTitledBorder( null, 
+                                                                "Selection", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        buttonPanel.setBorder( border );
 
 		bottomPanel = new JPanel();
-		bottomPanel.setBorder( BorderFactory.createTitledBorder( "Action" ) );
-
+        border = BorderFactory.createTitledBorder( null, 
+                                                                "Action", 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.TOP, 
+                                                                new Font( "Lucida Grande", 1, 12 ), 
+                                                                Color.WHITE );
+        bottomPanel.setBorder( border );
+        bottomPanel.setBackground( new Color( 85, 91, 106 ) );
+		
 		// Radio buttons
 		timePeriodRadioButton = new JRadioButton( "Time Period" );
 		timePeriodRadioButton.addActionListener( this );
@@ -112,16 +137,33 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 
 		// Buttons
 		fromDatePicker = new JCalendarButton();
+		fromDatePicker.setBackground( null );
 		fromDatePicker.addPropertyChangeListener( this );
 		toDatePicker = new JCalendarButton();
+		toDatePicker.setBackground( null );
 		toDatePicker.addPropertyChangeListener( this );
-
-
-		printButton = new JButton( "Print" );
+		
+		updateButton = new JButton();
+		updateButton.setBackground( null );
+		updateButton.setIcon( new ImageIcon(this.getClass().getResource("/media/updatebutton.png")) );
+		updateButton.setBorderPainted( false );
+		updateButton.setToolTipText( "Update data table" );
+		updateButton.addActionListener( this );
+		
+		printButton = new JButton();
+		printButton.setBackground( null );
+		printButton.setIcon( new ImageIcon(this.getClass().getResource("/media/print.png")) );
+		printButton.setBorderPainted( false );
+		printButton.setToolTipText( "Print" );
 		printButton.addActionListener( this );
-		publishButton = new JButton( "Publish" );
-		publishButton.addActionListener( this );
-		closeButton = new JButton( "Close" );
+		
+		closeButton = new JButton();
+		closeButton.setBackground( null );
+		closeButton.setActionCommand( "Close" );
+		closeButton.setBorderPainted( false );
+		closeButton.setIcon( new ImageIcon(this.getClass().getResource("/media/closebutton.png")) );
+		closeButton.setFont( new Font( "Lucida Grande", 1, 38 ) );
+		closeButton.setToolTipText( "Close" );
 		closeButton.addActionListener( this );
 	}
 
@@ -129,6 +171,13 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 	{
 		GridBagConstraints constraints = new GridBagConstraints();
 
+		constraints.insets = new Insets( 10, 10, 10, 10 );
+		JScrollPane taskTableScroll = new JScrollPane();
+		taskTableScroll.getViewport().add( taskTable );
+		taskTableScroll.setPreferredSize( new Dimension( 630, 410 ) );
+		dataPanel.add( taskTableScroll, constraints );
+
+		constraints = new GridBagConstraints();
 		constraints.gridy = 0;
 		constraints.insets = new Insets( 0, 0, 0, 0 );
 		buttonPanel.add( timePeriodRadioButton, constraints );
@@ -148,12 +197,13 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 		buttonPanel.add( toLabel, constraints );
 		constraints.insets = new Insets( 0, -65, 10, 0 );
 		buttonPanel.add( jiraComboBox, constraints );
+		constraints.insets = new Insets( 0, 30, 10, 0 );
+		buttonPanel.add( updateButton, constraints );
 
 		constraints = new GridBagConstraints();
 		constraints.anchor = GridBagConstraints.EAST;
 		constraints.insets = new Insets( 10, 200, 10, 10 );
 		bottomPanel.add( printButton, constraints );
-		bottomPanel.add( publishButton, constraints );
 		bottomPanel.add( closeButton, constraints );
 
 		constraints = new GridBagConstraints();
@@ -175,7 +225,8 @@ public class ReportDialog extends JDialog implements ActionListener, PropertyCha
 
 		taskTable.setAutoCreateRowSorter( true );
 		taskTable.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
-
+		taskTable.setPreferredSize( new Dimension( 630, 400 ) );
+		
 		JTableHeader taskTableHeader = taskTable.getTableHeader();
 		taskTableHeader.setBorder( BorderFactory.createLineBorder( Color.GRAY ) );
 		taskTableHeader.setBackground( new Color( 85, 91, 106 ) );

@@ -67,7 +67,7 @@ public class JCalendarButton extends JButton
         ClassLoader cl = this.getClass().getClassLoader();
         // Create icons
         try   {
-            Icon icon  = new ImageIcon(cl.getResource("images/buttons/" + JCalendarPopup.CALENDAR_ICON + ".gif"));
+            Icon icon  = new ImageIcon(cl.getResource("media/calandarButton.png"));
             this.setIcon(icon);
         } catch (Exception ex)  {
             this.setText("change");
@@ -77,6 +77,7 @@ public class JCalendarButton extends JButton
 
         this.setMargin(JCalendarPopup.NO_INSETS);
         this.setOpaque(false);
+        this.setBorderPainted( false );
         
         this.addActionListener(this);
     }
